@@ -35,40 +35,46 @@ demos = {
         "friendly_name": "login failed (password invalid)",
         "castle_name": "$login.failed",
         "api_endpoint": "track",
-        "show_device_button": False,
         "show_password_field": True,
-        "show_login_form": True
+        "show_login_form": True,
+        "first_step_action": "log in",
+        "first_step_desc": "First, let's log in. On the back end, we're going to assume that this is a bad password, so the password does not matter."
     },
     "login_failed_username_invalid": {
         "friendly_name": "login failed (username invalid)",
         "castle_name": "$login.failed",
         "api_endpoint": "track",
         "username": "invalid.username@mailinator.com",
-        "show_device_button": False,
         "show_password_field": True,
-        "show_login_form": True
+        "show_login_form": True,
+        "first_step_action": "log in",
+        "first_step_desc": "First, let's log in. On the back end, we're going to assume that this is an invalid username. You'll see that we send a user_id=null kvp to Castle, to indicate that this request/device included an invalid username."
    },   
     "login_succeeded": {
         "friendly_name": "login succeeded",
         "castle_name": "$login.succeeded",
         "api_endpoint": "authenticate",
-        "show_device_button": False,
         "show_password_field": True,
-        "show_login_form": True
+        "show_login_form": True,
+        "first_step_action": "log in",
+        "first_step_desc": "First, let's log in. On the back end, we're going to assume that the username + password combo is valid. Castle will respond with a recommendation as to whether to allow, deny, or challenge the authentication."
     },
     "password_reset_succeeded": {
         "friendly_name": "password reset succeeded",
         "castle_name": "$password_reset.succeeded",
         "api_endpoint": "track",
-        "show_device_button": False,
-        "show_password_field": True,
-        "show_login_form": True
+        "new_password": True,
+        "show_login_form": True,
+        "first_step_action": "reset password",
+        "first_step_desc": "We're going to assume that the user has arrived on this screen by satisfying whatever challenges you have in place to reset their password. On the back end, Castle will track the successful password reset event."
     },
     "review_suspicious_activity": {
+        "api_endpoint": "devices",
         "friendly_name": "review suspicious activity",
-        "show_device_button": True,
         "show_login_form": False,
-        "show_password_field": False
+        "show_password_field": False,
+        "first_step_action": "get a device token",
+        "first_step_desc": "First, let's get a device token:"
     }
 }
 
@@ -129,12 +135,16 @@ def demo(demo_name):
     location = os.getenv('location')
 
     show_header = True
-    show_device_button = demos[demo_name]["show_device_button"]
     show_login_form = demos[demo_name]["show_login_form"]
-    show_password_field = demos[demo_name]["show_password_field"]
+
+    if "new_password" in demos[demo_name]:
+        new_password = True
+    # _password_field = demos[demo_name]["show_password_field"]
 
     demo_list = demo_list_global
 
+    first_step_action = demos[demo_name]["first_step_action"]
+    first_step_desc = demos[demo_name]["first_step_desc"]
     friendly_name = demos[demo_name]["friendly_name"]
 
     # if demo_name == "forgot_password":
@@ -186,8 +196,8 @@ def evaluate_form_vals():
     print(verdict)
 
     r = {
-        "endpoint": demos[demo_name]["api_endpoint"],
-        "payload": payload_to_castle,
+        "api_endpoint": demos[demo_name]["api_endpoint"],
+        "payload_to_castle": payload_to_castle,
         "result": verdict
     }
 
@@ -220,6 +230,7 @@ def get_device_info():
     print(response.text)
 
     r = {
+        "api_endpoint": "devices",
         "device_info": response.json()
     }
 
@@ -229,6 +240,10 @@ def get_device_info():
 def get_device_token():
 
     print(request.json)
+
+    ui_state = "<p>got a device token</p>"
+
+    next_step = '<p><button onclick="evaluate_device_token()">get device info</button></p>'
 
     email = "lois.lane@mailinator.com"
 
@@ -258,7 +273,10 @@ def get_device_token():
     print(verdict)
 
     r = {
-        "device_token": verdict["device_token"]
+        "api_endpoint": "devices",
+        "device_token": verdict["device_token"],
+        "payload_to_castle": payload_to_castle,
+        "verdict": verdict
     }
 
     return r, 200, {'ContentType':'application/json'}  
@@ -271,12 +289,11 @@ def update_device():
     castle = Client.from_request(request)
 
     event = '$challenge.succeeded'
-    return_msg = "Thanks! You're all set!"
+    return_msg = "approve"
 
     if request.json["user_verdict"] == "report":
         event = '$review.escalated'
-        return_msg = "Thank you for letting us know. We have locked your account. Please check your email for link to reset your password and unlock your account."
-
+        return_msg = "report"
     result = castle.track(
         {
             'event': event,

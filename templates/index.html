@@ -14,37 +14,142 @@
 	<!-- Custom styles for this template -->
 	<link href="https://getbootstrap.com/docs/4.0/examples/starter-template/starter-template.css" rel="stylesheet">
 
-	{% if show_device_button %}
-
 	<script type="text/javascript">
-		function get_device_token() {
 
-			var data = {
-				"client_id": _castle('getClientId')
+		function start() {
+
+			$("#first_step_action").hide()
+
+			var demo_name = "{{demo_name}}"
+
+			if (demo_name == "review_suspicious_activity") {
+
+				var data = {
+					"client_id": _castle('getClientId')
+				}
+
+				$.ajax({
+					url: '/get_device_token',
+					dataType: 'json',
+					type: 'post',
+					contentType: 'application/json',
+					data: JSON.stringify(data),
+					processData: false,
+					success: function( data, textStatus, jQxhr ){
+						$("#results_table_div").show()
+
+						console.log(data)
+
+						var rows = ""
+
+						rows += get_table_row("api endpoint", "/" + data.api_endpoint)
+						rows += get_table_row("device token", data.device_token)
+						rows += get_table_row("payload to castle", data.payload_to_castle, true)
+						rows += get_table_row("verdict", data.verdict, true)
+
+						$("#this_step_desc").html("Got a device token!")
+
+						$("#results_table").html(rows)
+
+						$("#next_step").html('Next step: <br><p><button onclick="evaluate_device_token()">get device info</button></p>')
+
+						localStorage.setItem('device_token', data.device_token)
+					},
+					error: function( jqXhr, textStatus, errorThrown ){
+						console.log( errorThrown )
+					}
+				})
 			}
 
-			$.ajax({
-				url: '/get_device_token',
-				dataType: 'json',
-				type: 'post',
-				contentType: 'application/json',
-				data: JSON.stringify(data),
-				processData: false,
-				success: function( data, textStatus, jQxhr ){
-					$("#ui_form").hide()
-					$("#device_token_results").show()
-					$("#device_token").html(data.device_token)
+			else if (demo_name == "login_failed_password_invalid"
+				 || "login_failed_username_invalid"
+				 || "login_succeeded"
+				 || "password_reset_succeeded") {
 
-					localStorage.setItem('device_token', data.device_token)
+				var email = $("#email").val()
 
-				},
-				error: function( jqXhr, textStatus, errorThrown ){
-					console.log( errorThrown )
+				var client_id = _castle('getClientId')
+
+				var user_data = {
+					email: email,
+					client_id: client_id,
+					demo_name: demo_name
 				}
-			})
+
+				if ($("#password").val()) {
+					user_data.password = $("#password").val()
+				}
+
+				console.log("the castle client id is: " + client_id)
+
+				$.ajax({
+					url: '/evaluate_form_vals',
+					dataType: 'json',
+					type: 'post',
+					contentType: 'application/json',
+					data: JSON.stringify(user_data),
+					processData: false,
+					success: function( data, textStatus, jQxhr ){
+						$("#login_form").hide()
+
+						$("#results_table_div").show()
+
+						var rows = ""
+
+						rows += get_table_row("api endpoint", "/" + data.api_endpoint)
+						rows += get_table_row("payload to castle", data.payload_to_castle, true)
+
+						var this_step_desc = ""
+
+						if (demo_name == "login_failed_password_invalid" 
+							|| demo_name == "login_failed_username_invalid"
+							|| demo_name == "password_reset_succeeded") {
+							this_step_desc = "Successfully tracked an event: {{friendly_name}}"
+						}
+						else {
+							this_step_desc = "Retrieved a recommendation from Castle on the next step in the authentication process."
+							rows += get_table_row("response from castle", data.result, true)
+						}
+
+						$("#this_step_desc").html(this_step_desc)
+
+						$("#results_table").html(rows)
+
+						$("#next_step").html('')
+					},
+					error: function( jqXhr, textStatus, errorThrown ){
+						console.log( errorThrown )
+					}
+				})
+			}
+		}
+
+	</script>
+
+	<script type="text/javascript">
+
+		function get_table_row(label, data, is_json = false) {
+
+			var row = '<tr>'
+
+			row += '<td style="font-weight: bold">' + label + '</td>'
+
+			row += '<td style = "padding-left: 5">'
+
+			if (is_json) {
+				row += '<pre>' + JSON.stringify(data, null, 1) + '</pre>'
+			}
+			else {
+				row += data
+			}
+
+			row += '</td></tr>'
+
+			return row
 		}
 
 		function evaluate_device_token() {
+
 			var data = {
 				"device_token": localStorage.getItem('device_token')
 			}
@@ -57,11 +162,24 @@
 				data: JSON.stringify(data),
 				processData: false,
 				success: function( data, textStatus, jQxhr ){
+
 					console.dir(data)
-					$("#ui_form").hide()
-					$("#device_token_results").hide()
-					$("#device_info_results").show()
-					$("#device_info").html("<pre>" + JSON.stringify(data.device_info, null, 1) + "</pre>")
+
+					var rows = ""
+
+					rows += get_table_row("api endpoint", "/" + data.api_endpoint)
+					rows += get_table_row("payload to castle", localStorage.getItem('device_token'))
+					rows += get_table_row("device info", data.device_info, true)
+
+					var next_step = "Next step: user makes a decision about the device:"
+					next_step += "<p><button onclick=\"update_device('approve')\">Yes, this was me</button></p>"
+					next_step += "<p><button onclick=\"update_device('report')\">No, it wasn't me</button></p>"
+
+					$("#this_step_desc").html("Got data about the device.")
+
+					$("#results_table").html(rows)
+
+					$("#next_step").html(next_step)
 				},
 				error: function( jqXhr, textStatus, errorThrown ){
 					console.log( errorThrown )
@@ -70,6 +188,7 @@
 		}
 
 		function update_device(user_verdict) {
+
 			var data = {
 				"device_token": localStorage.getItem('device_token'),
 				"user_verdict": user_verdict
@@ -83,10 +202,23 @@
 				data: JSON.stringify(data),
 				processData: false,
 				success: function( data, textStatus, jQxhr ){
+
 					console.dir(data)
-					$("#device_info_results").hide()
-					$("#device_info_user_msg_results").show()
-					$("#device_info_user_msg").html(data.message)
+
+					var this_step_desc = ""
+
+					if (data.message == "approve") {
+						this_step_desc = "Thanks! You're all set!"
+					}
+					else {
+						this_step_desc = "<p>The user has confirmed a suspicious login, so a this point you should lock their account on the back end and let them know:"
+						this_step_desc += "<p>Thank you for letting us know.</p>"
+						this_step_desc += "<p style = 'color: red'>We have locked your account.</p>"
+						this_step_desc += "<p>Please check your email for a link to reset your password and unlock your account.</p>"
+					}
+					$("#this_step_desc").html(this_step_desc)
+					$("#results_table").html("")
+					$("#next_step").html("")
 				},
 				error: function( jqXhr, textStatus, errorThrown ){
 					console.log( errorThrown )
@@ -94,56 +226,6 @@
 			})
 		}
 	</script>
-	{% endif %}
-
-
-	{% if show_login_form %}
-
-	<script>
-		function evaluate_form_vals() {
-
-			var email = $("#email").val()
-
-			var client_id = _castle('getClientId')
-
-			var demo_name = "{{demo_name}}"
-
-			var user_data = {
-				email: email,
-				client_id: client_id,
-				demo_name: demo_name
-			}
-
-			if ($("#password").val()) {
-				user_data.password = $("#password").val()
-			}
-
-			console.log("the castle client id is: " + client_id)
-
-			$.ajax({
-				url: '/evaluate_form_vals',
-				dataType: 'json',
-				type: 'post',
-				contentType: 'application/json',
-				data: JSON.stringify(user_data),
-				processData: false,
-				success: function( data, textStatus, jQxhr ){
-					$("#ui_form").hide()
-					$("#results_table").show()
-					$("#endpoint").html(" /" + data.endpoint)
-					$("#payload").html("<pre>" + JSON.stringify(data.payload, null, 1) + "</pre>")
-					$("#result").html("<pre>" + JSON.stringify(data.result, null, 1) + "</pre>")
-				},
-				error: function( jqXhr, textStatus, errorThrown ){
-					console.log( errorThrown )
-				}
-			})
-		}
-
-	</script>
-
-	{% endif %}
-
 </head>
 
 <body>
@@ -175,83 +257,45 @@
 		<div id = "ui">
 
 			{% if error %}
-			<p class="lead">Sorry, but we could not load that URL.</p>
-			{% endif %}
+				<p class="lead">Sorry, but we could not load that URL.</p>
+			{% else %}
 
-			{% if home %}
-			<p class="lead">Welcome to Castle demos!</p>
-			<p class="lead">Please choose a demo from the navbar drop-down.</p>
-			{% endif %}
+				{% if home %}
+					<p class="lead">Welcome to Castle demos!</p>
+					<p class="lead">Please choose a demo from the navbar drop-down.</p>
+				{% else %}
 
-			{% if show_header %}
-			<p class="lead">demo: <a href = "/{{demo_name}}">{{friendly_name}}</a></p>
-			{% endif %}
+					<p class="lead">demo: <a href = "/{{demo_name}}">{{friendly_name}}</a></p>
 
-			{% if show_login_form %}
-			<div id = "ui_form">
-				<p>email: <input type = "text" size = 40 id = "email" value = "{{username}}"></p>
-				{% if password_field %}
-				<p>password: <input type = "password" size = 40 id = "password"></p>
+					<div id = "this_step_desc">{{first_step_desc}}</div>
+
+					{% if show_login_form %}
+					<br>
+					<div id = "login_form">
+						<p>email: <input type = "text" size = 40 id = "email" value = "{{username}}"></p>
+						<p>
+						{% if new_password %}
+						new 
+						{% endif %}
+						password: <input type = "password" size = 40 id = "password"></p>
+					</div>
+					{% endif %}
+
+					<div id = "first_step_action"><br><p><button onclick='start()'>{{first_step_action}}</button></p></span></div>
+
+					<br>
+
+					<div id = "results_table_div" style = "display: none">
+						<table border = 1 id = "results_table">
+						</table>
+					</div>
+
+					<br>
+
+					<div id = "next_step"><span id="next_step_desc"></span></div>
 				{% endif %}
-				<p><button onclick="evaluate_form_vals()">go</button></p>
-			</div>
 			{% endif %}
 
-			{% if show_device_button %}
-			<div id = "ui_form">
-				<p>First, let's get a device token:</p>
-				<p><button onclick="get_device_token()">go</button></p>
-			</div>
-
-			<div id = "device_token_results" style = "display:none">
-				<table border = 1>
-					<tr>
-						<td style="font-weight: bold">device token</td>
-						<td id = "device_token" style = "padding-left: 5"></td>
-					</tr>
-				</table>
-				<br>
-				<p><button onclick="evaluate_device_token()">get device info</button></p>
-			</div>
-
-			<div id = "device_info_results" style = "display:none">
-				<table border = 1>
-					<tr>
-						<td style="font-weight: bold">device info</td>
-						<td id = "device_info" style = "padding-left: 5"></td>
-					</tr>
-				</table>
-				<br>
-				<p><button onclick="update_device('approve')">Yes, this was me</button></p>
-				<p><button onclick="update_device('report')">No, it wasn't me</button></p>
-			</div>
-
-			<div id = "device_info_user_msg_results" style = "display:none">
-				<table border = 1>
-					<tr>
-						<td style="font-weight: bold">device info</td>
-						<td id = "device_info_user_msg" style = "padding-left: 5"></td>
-					</tr>
-				</table>
-			</div>
-			{% endif %}
-
-			<div id = "results_table" style = "display: none">
-				<table border = 1>
-					<tr>
-						<td style="font-weight: bold">castle endpoint</td>
-						<td id = "endpoint" style = "padding-left: 5"></td>
-					</tr>
-					<tr>
-						<td style="font-weight: bold">payload to castle</td>
-						<td id = "payload"></td>
-					</tr>
-					<tr>
-						<td style="font-weight: bold">result from castle</td>
-						<td id = "result"></td>
-					</tr>
-				</table>
-			</div>
 		</div>
 	</main><!-- /.container -->
 
