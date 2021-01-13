@@ -57,9 +57,36 @@
 				data: JSON.stringify(data),
 				processData: false,
 				success: function( data, textStatus, jQxhr ){
+					console.dir(data)
 					$("#ui_form").hide()
-					$("#device_token_results").show()
-					$("#device_token").html(data.device_token)
+					$("#device_token_results").hide()
+					$("#device_info_results").show()
+					$("#device_info").html("<pre>" + JSON.stringify(data.device_info, null, 1) + "</pre>")
+				},
+				error: function( jqXhr, textStatus, errorThrown ){
+					console.log( errorThrown )
+				}
+			})
+		}
+
+		function update_device(user_verdict) {
+			var data = {
+				"device_token": localStorage.getItem('device_token'),
+				"user_verdict": user_verdict
+			}
+
+			$.ajax({
+				url: '/update_device',
+				dataType: 'json',
+				type: 'post',
+				contentType: 'application/json',
+				data: JSON.stringify(data),
+				processData: false,
+				success: function( data, textStatus, jQxhr ){
+					console.dir(data)
+					$("#device_info_results").hide()
+					$("#device_info_user_msg_results").show()
+					$("#device_info_user_msg").html(data.message)
 				},
 				error: function( jqXhr, textStatus, errorThrown ){
 					console.log( errorThrown )
@@ -187,6 +214,26 @@
 				<p><button onclick="evaluate_device_token()">get device info</button></p>
 			</div>
 
+			<div id = "device_info_results" style = "display:none">
+				<table border = 1>
+					<tr>
+						<td style="font-weight: bold">device info</td>
+						<td id = "device_info" style = "padding-left: 5"></td>
+					</tr>
+				</table>
+				<br>
+				<p><button onclick="update_device('approve')">Yes, this was me</button></p>
+				<p><button onclick="update_device('report')">No, it wasn't me</button></p>
+			</div>
+
+			<div id = "device_info_user_msg_results" style = "display:none">
+				<table border = 1>
+					<tr>
+						<td style="font-weight: bold">device info</td>
+						<td id = "device_info_user_msg" style = "padding-left: 5"></td>
+					</tr>
+				</table>
+			</div>
 			{% endif %}
 
 			<div id = "results_table" style = "display: none">

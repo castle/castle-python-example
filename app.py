@@ -13,10 +13,9 @@ import requests
 
 import castle
 from castle.client import Client
-from castle import events
-from castle.api_request import APIRequest
-from castle.commands.get_device import CommandsGetDevice
-
+# from castle import events
+# from castle.api_request import APIRequest
+# from castle.commands.get_device import CommandsGetDevice
 
 #################################
 
@@ -199,40 +198,32 @@ def get_device_info():
 
     print(request.json)
 
-    result = APIGetDevice.call(request.json["device_token"])
+    url = "https://api.castle.io/v1/devices/"
 
-    print(result)
+    url += request.json["device_token"]
 
-    # user_id = email
+    message = ":" + os.getenv('castle_api_secret')
 
-    # registered_at = '2020-02-23T22:28:55.387Z'
+    message_bytes = message.encode('ascii')
+    base64_bytes = base64.b64encode(message_bytes)
+    authz_string = 'Basic ' + base64_bytes.decode('ascii')
 
-    # client_id = request.json["client_id"]
+    payload={}
 
-    # payload_to_castle = {
-    #     'event': "$login_succeeded",
-    #     'user_id': email,
-    #     'user_traits': {
-    #         'email': email,
-    #         'registered_at': registered_at
-    #     },
-    #     'context': {
-    #         'client_id': client_id
-    #     }
-    # }
+    headers = {
+      'Content-Type': 'application/json',
+      'Authorization': 'Basic Okdac0N6cjNlWGhwYzRRYnc2eHVXV016ZlNETHJVWkN4'
+    }
 
-    # castle = Client.from_request(request)
+    response = requests.request("GET", url, headers=headers, data=payload)
 
-    # verdict = castle.authenticate(payload_to_castle)
+    print(response.text)
 
-    # print("verdict:")
-    # print(verdict)
+    r = {
+        "device_info": response.json()
+    }
 
-    # r = {
-    #     "device_token": verdict["device_token"]
-    # }
-
-    # return r, 200, {'ContentType':'application/json'}
+    return r, 200, {'ContentType':'application/json'}
 
 @app.route('/get_device_token', methods=['POST'])
 def get_device_token():
@@ -272,3 +263,31 @@ def get_device_token():
 
     return r, 200, {'ContentType':'application/json'}  
 
+@app.route('/update_device', methods=['POST'])
+def update_device():
+
+    print(request.json)
+
+    castle = Client.from_request(request)
+
+    event = '$challenge.succeeded'
+    return_msg = "Thanks! You're all set!"
+
+    if request.json["user_verdict"] == "report":
+        event = '$review.escalated'
+        return_msg = "Thank you for letting us know. We have locked your account. Please check your email for link to reset your password and unlock your account."
+
+    result = castle.track(
+        {
+            'event': event,
+            'device_token': request.json["device_token"]
+        }
+    )
+
+    print(result)
+
+    r = {
+        "message": return_msg
+    }
+
+    return r, 200, {'ContentType':'application/json'}
