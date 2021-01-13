@@ -14,6 +14,9 @@ import requests
 import castle
 from castle.client import Client
 from castle import events
+from castle.api_request import APIRequest
+from castle.commands.get_device import CommandsGetDevice
+
 
 #################################
 
@@ -32,23 +35,41 @@ demos = {
     "login_failed_password_invalid": {
         "friendly_name": "login failed (password invalid)",
         "castle_name": "$login.failed",
-        "api_endpoint": "track"
+        "api_endpoint": "track",
+        "show_device_button": False,
+        "show_password_field": True,
+        "show_login_form": True
     },
     "login_failed_username_invalid": {
         "friendly_name": "login failed (username invalid)",
         "castle_name": "$login.failed",
         "api_endpoint": "track",
-        "username": "invalid.username@mailinator.com"
-    },   
+        "username": "invalid.username@mailinator.com",
+        "show_device_button": False,
+        "show_password_field": True,
+        "show_login_form": True
+   },   
     "login_succeeded": {
         "friendly_name": "login succeeded",
         "castle_name": "$login.succeeded",
-        "api_endpoint": "authenticate"
+        "api_endpoint": "authenticate",
+        "show_device_button": False,
+        "show_password_field": True,
+        "show_login_form": True
     },
     "password_reset_succeeded": {
         "friendly_name": "password reset succeeded",
         "castle_name": "$password_reset.succeeded",
-        "api_endpoint": "track"
+        "api_endpoint": "track",
+        "show_device_button": False,
+        "show_password_field": True,
+        "show_login_form": True
+    },
+    "review_suspicious_activity": {
+        "friendly_name": "review suspicious activity",
+        "show_device_button": True,
+        "show_login_form": False,
+        "show_password_field": False
     }
 }
 
@@ -84,6 +105,7 @@ def home():
     demo_list = demo_list_global
 
     home = True
+    show_header = False
 
     return render_template('index.html', **locals())
 
@@ -93,6 +115,8 @@ def demo(demo_name):
     if demo_name not in valid_urls:
         error = True
         show_form = False
+        show_header = False
+
         return render_template('index.html', **locals())
 
     ##########################################
@@ -104,16 +128,20 @@ def demo(demo_name):
 
     castle_app_id = os.getenv('castle_app_id')
     location = os.getenv('location')
-    show_form = True
+
+    show_header = True
+    show_device_button = demos[demo_name]["show_device_button"]
+    show_login_form = demos[demo_name]["show_login_form"]
+    show_password_field = demos[demo_name]["show_password_field"]
 
     demo_list = demo_list_global
 
     friendly_name = demos[demo_name]["friendly_name"]
 
-    if demo_name == "forgot_password":
-        password_field = False
-    else:
-        password_field = True
+    # if demo_name == "forgot_password":
+    #     password_field = False
+    # else:
+    #     password_field = True
 
     return render_template('index.html', **locals())
 
@@ -164,4 +192,83 @@ def evaluate_form_vals():
         "result": verdict
     }
 
+    return r, 200, {'ContentType':'application/json'}
+
+@app.route('/get_device_info', methods=['POST'])
+def get_device_info():
+
+    print(request.json)
+
+    result = APIGetDevice.call(request.json["device_token"])
+
+    print(result)
+
+    # user_id = email
+
+    # registered_at = '2020-02-23T22:28:55.387Z'
+
+    # client_id = request.json["client_id"]
+
+    # payload_to_castle = {
+    #     'event': "$login_succeeded",
+    #     'user_id': email,
+    #     'user_traits': {
+    #         'email': email,
+    #         'registered_at': registered_at
+    #     },
+    #     'context': {
+    #         'client_id': client_id
+    #     }
+    # }
+
+    # castle = Client.from_request(request)
+
+    # verdict = castle.authenticate(payload_to_castle)
+
+    # print("verdict:")
+    # print(verdict)
+
+    # r = {
+    #     "device_token": verdict["device_token"]
+    # }
+
+    # return r, 200, {'ContentType':'application/json'}
+
+@app.route('/get_device_token', methods=['POST'])
+def get_device_token():
+
+    print(request.json)
+
+    email = "lois.lane@mailinator.com"
+
+    user_id = email
+
+    registered_at = '2020-02-23T22:28:55.387Z'
+
+    client_id = request.json["client_id"]
+
+    payload_to_castle = {
+        'event': "$login_succeeded",
+        'user_id': email,
+        'user_traits': {
+            'email': email,
+            'registered_at': registered_at
+        },
+        'context': {
+            'client_id': client_id
+        }
+    }
+
+    castle = Client.from_request(request)
+
+    verdict = castle.authenticate(payload_to_castle)
+
+    print("verdict:")
+    print(verdict)
+
+    r = {
+        "device_token": verdict["device_token"]
+    }
+
     return r, 200, {'ContentType':'application/json'}  
+

@@ -14,7 +14,63 @@
 	<!-- Custom styles for this template -->
 	<link href="https://getbootstrap.com/docs/4.0/examples/starter-template/starter-template.css" rel="stylesheet">
 
-	{% if show_form %}
+	{% if show_device_button %}
+
+	<script type="text/javascript">
+		function get_device_token() {
+
+			var data = {
+				"client_id": _castle('getClientId')
+			}
+
+			$.ajax({
+				url: '/get_device_token',
+				dataType: 'json',
+				type: 'post',
+				contentType: 'application/json',
+				data: JSON.stringify(data),
+				processData: false,
+				success: function( data, textStatus, jQxhr ){
+					$("#ui_form").hide()
+					$("#device_token_results").show()
+					$("#device_token").html(data.device_token)
+
+					localStorage.setItem('device_token', data.device_token)
+
+				},
+				error: function( jqXhr, textStatus, errorThrown ){
+					console.log( errorThrown )
+				}
+			})
+		}
+
+		function evaluate_device_token() {
+			var data = {
+				"device_token": localStorage.getItem('device_token')
+			}
+
+			$.ajax({
+				url: '/get_device_info',
+				dataType: 'json',
+				type: 'post',
+				contentType: 'application/json',
+				data: JSON.stringify(data),
+				processData: false,
+				success: function( data, textStatus, jQxhr ){
+					$("#ui_form").hide()
+					$("#device_token_results").show()
+					$("#device_token").html(data.device_token)
+				},
+				error: function( jqXhr, textStatus, errorThrown ){
+					console.log( errorThrown )
+				}
+			})
+		}
+	</script>
+	{% endif %}
+
+
+	{% if show_login_form %}
 
 	<script>
 		function evaluate_form_vals() {
@@ -56,6 +112,7 @@
 				}
 			})
 		}
+
 	</script>
 
 	{% endif %}
@@ -99,8 +156,11 @@
 			<p class="lead">Please choose a demo from the navbar drop-down.</p>
 			{% endif %}
 
-			{% if show_form %}
+			{% if show_header %}
 			<p class="lead">demo: <a href = "/{{demo_name}}">{{friendly_name}}</a></p>
+			{% endif %}
+
+			{% if show_login_form %}
 			<div id = "ui_form">
 				<p>email: <input type = "text" size = 40 id = "email" value = "{{username}}"></p>
 				{% if password_field %}
@@ -108,6 +168,25 @@
 				{% endif %}
 				<p><button onclick="evaluate_form_vals()">go</button></p>
 			</div>
+			{% endif %}
+
+			{% if show_device_button %}
+			<div id = "ui_form">
+				<p>First, let's get a device token:</p>
+				<p><button onclick="get_device_token()">go</button></p>
+			</div>
+
+			<div id = "device_token_results" style = "display:none">
+				<table border = 1>
+					<tr>
+						<td style="font-weight: bold">device token</td>
+						<td id = "device_token" style = "padding-left: 5"></td>
+					</tr>
+				</table>
+				<br>
+				<p><button onclick="evaluate_device_token()">get device info</button></p>
+			</div>
+
 			{% endif %}
 
 			<div id = "results_table" style = "display: none">
