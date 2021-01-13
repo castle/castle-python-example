@@ -22,74 +22,106 @@
 
 			var demo_name = "{{demo_name}}"
 
-			var email = $("#email").val()
+			if (demo_name == "review_suspicious_activity") {
 
-			var client_id = _castle('getClientId')
+				var data = {
+					"client_id": _castle('getClientId')
+				}
 
-			var user_data = {
-				email: email,
-				client_id: client_id,
-				demo_name: demo_name
-			}
+				$.ajax({
+					url: '/get_device_token',
+					dataType: 'json',
+					type: 'post',
+					contentType: 'application/json',
+					data: JSON.stringify(data),
+					processData: false,
+					success: function( data, textStatus, jQxhr ){
+						$("#results_table_div").show()
 
-			if ($("#password").val()) {
-				user_data.password = $("#password").val()
-			}
+						console.log(data)
 
-			console.log("the castle client id is: " + client_id)
+						var rows = ""
 
-			$.ajax({
-				url: '/evaluate_login',
-				dataType: 'json',
-				type: 'post',
-				contentType: 'application/json',
-				data: JSON.stringify(user_data),
-				processData: false,
-				success: function( data, textStatus, jQxhr ){
-					$("#login_form").hide()
-
-					$("#results_table_div").show()
-
-					var rows = ""
-					var this_step_desc = ""
-					var next_step = ""
-
-					rows += get_table_row("api endpoint", "/" + data.api_endpoint)
-
-					if (demo_name == "login_failed_password_invalid" 
-						|| demo_name == "login_failed_username_invalid"
-						|| demo_name == "password_reset_succeeded") {
-						this_step_desc = "Successfully tracked an event: {{friendly_name}}"
+						rows += get_table_row("api endpoint", "/" + data.api_endpoint)
+						rows += get_table_row("device token", data.device_token)
 						rows += get_table_row("payload to castle", data.payload_to_castle, true)
+						rows += get_table_row("verdict", data.verdict, true)
 
-					}
-					else if (demo_name == "review_suspicious_activity") {
-						this_step_desc = "Retrieved a device token from Castle after a successful login."
-						rows += get_table_row("device_token", data.device_token, true)
-						rows += get_table_row("payload to castle", data.payload_to_castle, true)
-						rows += get_table_row("response from castle", data.result, true)
+						$("#this_step_desc").html("Got a device token!")
 
-						next_step = 'Next step: <br><p><button onclick="evaluate_device_token()">get device info</button></p>'
+						$("#results_table").html(rows)
+
+						$("#next_step").html('Next step: <br><p><button onclick="evaluate_device_token()">get device info</button></p>')
 
 						localStorage.setItem('device_token', data.device_token)
+					},
+					error: function( jqXhr, textStatus, errorThrown ){
+						console.log( errorThrown )
 					}
-					else {
-						this_step_desc = "Retrieved a recommendation from Castle on the next step in the authentication process."
-						rows += get_table_row("verdict from castle", data.action)
-						rows += get_table_row("payload to castle", data.payload_to_castle, true)
-						rows += get_table_row("response from castle", data.result, true)
-					}
+				})
+			}
 
-					$("#this_step_desc").html(this_step_desc)
+			else if (demo_name == "login_failed_password_invalid"
+				 || "login_failed_username_invalid"
+				 || "login_succeeded"
+				 || "password_reset_succeeded") {
 
-					$("#results_table").html(rows)
+				var email = $("#email").val()
 
-					$("#next_step").html(next_step)
-				},
-				error: function( jqXhr, textStatus, errorThrown ){
-					console.log( errorThrown )
+				var client_id = _castle('getClientId')
+
+				var user_data = {
+					email: email,
+					client_id: client_id,
+					demo_name: demo_name
 				}
-			})
+
+				if ($("#password").val()) {
+					user_data.password = $("#password").val()
+				}
+
+				console.log("the castle client id is: " + client_id)
+
+				$.ajax({
+					url: '/evaluate_form_vals',
+					dataType: 'json',
+					type: 'post',
+					contentType: 'application/json',
+					data: JSON.stringify(user_data),
+					processData: false,
+					success: function( data, textStatus, jQxhr ){
+						$("#login_form").hide()
+
+						$("#results_table_div").show()
+
+						var rows = ""
+
+						rows += get_table_row("api endpoint", "/" + data.api_endpoint)
+						rows += get_table_row("payload to castle", data.payload_to_castle, true)
+
+						var this_step_desc = ""
+
+						if (demo_name == "login_failed_password_invalid" 
+							|| demo_name == "login_failed_username_invalid"
+							|| demo_name == "password_reset_succeeded") {
+							this_step_desc = "Successfully tracked an event: {{friendly_name}}"
+						}
+						else {
+							this_step_desc = "Retrieved a recommendation from Castle on the next step in the authentication process."
+							rows += get_table_row("response from castle", data.result, true)
+						}
+
+						$("#this_step_desc").html(this_step_desc)
+
+						$("#results_table").html(rows)
+
+						$("#next_step").html('')
+					},
+					error: function( jqXhr, textStatus, errorThrown ){
+						console.log( errorThrown )
+					}
+				})
+			}
 		}
 
 	</script>
@@ -176,7 +208,7 @@
 					var this_step_desc = ""
 
 					if (data.message == "approve") {
-						this_step_desc = "Thanks! You're all set! Castle has added this device to the allowlist for this user."
+						this_step_desc = "Thanks! You're all set!"
 					}
 					else {
 						this_step_desc = "<p>The user has confirmed a suspicious login, so a this point you should lock their account on the back end and let them know:"
@@ -235,6 +267,7 @@
 
 				<div id = "this_step_desc">{{first_step_desc}}</div>
 
+				{% if show_login_form %}
 				<br>
 				<div id = "login_form">
 					<p>email: <input type = "text" size = 40 id = "email" value = "{{username}}"></p>
@@ -244,6 +277,7 @@
 					{% endif %}
 					password: <input type = "password" size = 40 id = "password"></p>
 				</div>
+				{% endif %}
 
 				<div id = "first_step_action"><br><p><button onclick='start()'>{{first_step_action}}</button></p></span></div>
 

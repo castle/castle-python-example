@@ -13,13 +13,12 @@ import requests
 
 import castle
 from castle.client import Client
-# from castle import events
-# from castle.api_request import APIRequest
-# from castle.commands.get_device import CommandsGetDevice
 
 #################################
 
 import castle_config
+
+from demo_config import demos, demo_list, valid_urls
 
 #################################
 
@@ -28,134 +27,56 @@ load_dotenv()
 app = Flask(__name__)
 
 #################################
+# Routes
+#################################
 
-demos = {
+# default params to be rendered with every page
+def get_default_params():
 
-    "login_failed_password_invalid": {
-        "friendly_name": "login failed (password invalid)",
-        "castle_name": "$login.failed",
-        "api_endpoint": "track",
-        "show_password_field": True,
-        "show_login_form": True,
-        "first_step_action": "log in",
-        "first_step_desc": "First, let's log in. On the back end, we're going to assume that this is a bad password, so the password does not matter."
-    },
-    "login_failed_username_invalid": {
-        "friendly_name": "login failed (username invalid)",
-        "castle_name": "$login.failed",
-        "api_endpoint": "track",
-        "username": "invalid.username@mailinator.com",
-        "show_password_field": True,
-        "show_login_form": True,
-        "first_step_action": "log in",
-        "first_step_desc": "First, let's log in. On the back end, we're going to assume that this is an invalid username. You'll see that we send a user_id=null kvp to Castle, to indicate that this request/device included an invalid username."
-   },   
-    "login_succeeded": {
-        "friendly_name": "login succeeded",
-        "castle_name": "$login.succeeded",
-        "api_endpoint": "authenticate",
-        "show_password_field": True,
-        "show_login_form": True,
-        "first_step_action": "log in",
-        "first_step_desc": "First, let's log in. On the back end, we're going to assume that the username + password combo is valid. Castle will respond with a recommendation as to whether to allow, deny, or challenge the authentication."
-    },
-    "password_reset_succeeded": {
-        "friendly_name": "password reset succeeded",
-        "castle_name": "$password_reset.succeeded",
-        "api_endpoint": "track",
-        "new_password": True,
-        "show_login_form": True,
-        "first_step_action": "reset password",
-        "first_step_desc": "We're going to assume that the user has arrived on this screen by satisfying whatever challenges you have in place to reset their password. On the back end, Castle will track the successful password reset event."
-    },
-    "review_suspicious_activity": {
-        "api_endpoint": "devices",
-        "friendly_name": "review suspicious activity",
-        "show_login_form": False,
-        "show_password_field": False,
-        "first_step_action": "get a device token",
-        "first_step_desc": "First, let's get a device token:"
+    default_params = {
+        "castle_app_id": os.getenv('castle_app_id'),
+        "location": os.getenv('location'),
+        "demo_list": demo_list,
+        "username": "lois.lane@mailinator.com" 
     }
-}
 
-#################################
+    return default_params
 
-demo_list_global = []
-
-for k, v in demos.items():
-
-    e = {}
-
-    e["url"] = k
-
-    for key, value in v.items():
-        e[key] = value
-
-    demo_list_global.append(e)
-
-#################################
-
-valid_urls = []
-
-for k, v in demos.items():
-    valid_urls.append(k)
-
-#################################
+# another default value
+registered_at = '2020-02-23T22:28:55.387Z'
 
 @app.route('/')
 def home():
-    castle_app_id = os.getenv('castle_app_id')
-    location = os.getenv('location')
 
-    demo_list = demo_list_global
+    params = get_default_params()
 
-    home = True
-    show_header = False
+    params["home"] = True
 
-    return render_template('index.html', **locals())
+    return render_template('index.html', **params)
 
 @app.route('/<demo_name>')
 def demo(demo_name):
 
     if demo_name not in valid_urls:
-        error = True
-        show_form = False
-        show_header = False
 
-        return render_template('index.html', **locals())
+        return render_template('index.html', error=True)
 
     ##########################################
 
-    if "username" in demos[demo_name]:
-        username = demos[demo_name]["username"]
-    else:
-        username = "lois.lane@mailinator.com"
+    params = get_default_params()
 
-    castle_app_id = os.getenv('castle_app_id')
-    location = os.getenv('location')
+    this_demo = demos[demo_name]
 
-    show_header = True
-    show_login_form = demos[demo_name]["show_login_form"]
+    for k, v in this_demo.items():
 
-    if "new_password" in demos[demo_name]:
-        new_password = True
-    # _password_field = demos[demo_name]["show_password_field"]
+        params[k] = v
 
-    demo_list = demo_list_global
+        params["demo_name"] = demo_name
 
-    first_step_action = demos[demo_name]["first_step_action"]
-    first_step_desc = demos[demo_name]["first_step_desc"]
-    friendly_name = demos[demo_name]["friendly_name"]
+    return render_template('index.html', **params)
 
-    # if demo_name == "forgot_password":
-    #     password_field = False
-    # else:
-    #     password_field = True
-
-    return render_template('index.html', **locals())
-
-@app.route('/evaluate_form_vals', methods=['POST'])
-def evaluate_form_vals():
+@app.route('/evaluate_login', methods=['POST'])
+def evaluate_login():
 
     print(request.json)
 
@@ -168,8 +89,6 @@ def evaluate_form_vals():
 
     if demo_name == "login_failed_username_invalid":
         user_id = None
-
-    registered_at = '2020-02-23T22:28:55.387Z'
 
     payload_to_castle = {
         'event': demos[demo_name]["castle_name"],
@@ -201,6 +120,12 @@ def evaluate_form_vals():
         "result": verdict
     }
 
+    if "device_token" in verdict:
+        r["device_token"] = verdict["device_token"]
+
+    if "action" in verdict:
+        r["action"] = verdict["action"]
+
     return r, 200, {'ContentType':'application/json'}
 
 @app.route('/get_device_info', methods=['POST'])
@@ -222,7 +147,7 @@ def get_device_info():
 
     headers = {
       'Content-Type': 'application/json',
-      'Authorization': 'Basic Okdac0N6cjNlWGhwYzRRYnc2eHVXV016ZlNETHJVWkN4'
+      'Authorization': authz_string
     }
 
     response = requests.request("GET", url, headers=headers, data=payload)
@@ -236,64 +161,20 @@ def get_device_info():
 
     return r, 200, {'ContentType':'application/json'}
 
-@app.route('/get_device_token', methods=['POST'])
-def get_device_token():
-
-    print(request.json)
-
-    ui_state = "<p>got a device token</p>"
-
-    next_step = '<p><button onclick="evaluate_device_token()">get device info</button></p>'
-
-    email = "lois.lane@mailinator.com"
-
-    user_id = email
-
-    registered_at = '2020-02-23T22:28:55.387Z'
-
-    client_id = request.json["client_id"]
-
-    payload_to_castle = {
-        'event': "$login_succeeded",
-        'user_id': email,
-        'user_traits': {
-            'email': email,
-            'registered_at': registered_at
-        },
-        'context': {
-            'client_id': client_id
-        }
-    }
-
-    castle = Client.from_request(request)
-
-    verdict = castle.authenticate(payload_to_castle)
-
-    print("verdict:")
-    print(verdict)
-
-    r = {
-        "api_endpoint": "devices",
-        "device_token": verdict["device_token"],
-        "payload_to_castle": payload_to_castle,
-        "verdict": verdict
-    }
-
-    return r, 200, {'ContentType':'application/json'}  
-
 @app.route('/update_device', methods=['POST'])
 def update_device():
 
     print(request.json)
 
-    castle = Client.from_request(request)
-
-    event = '$challenge.succeeded'
-    return_msg = "approve"
-
     if request.json["user_verdict"] == "report":
         event = '$review.escalated'
         return_msg = "report"
+    else:
+        event = '$challenge.succeeded'
+        return_msg = "approve"
+
+    castle = Client.from_request(request)
+
     result = castle.track(
         {
             'event': event,
