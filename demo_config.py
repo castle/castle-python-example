@@ -21,7 +21,7 @@ demos = {
         "castle_name": "$login.succeeded",
         "friendly_name": "login succeeded",
         "first_step_action": "log in",
-        "first_step_desc": "First, let's log in. On the back end, we're going to assume that the username + password combo is valid. Castle will respond with a recommendation as to whether to allow, deny, or challenge the authentication."
+        "first_step_desc": "First, let's log in. On the back end, we're going to assume that the username + password combo is valid (regardless of the password you put in). Castle will respond with a recommendation as to whether to allow, deny, or challenge the authentication."
     },
     "password_reset_succeeded": {
         "api_endpoint": "track",
@@ -29,7 +29,7 @@ demos = {
         "friendly_name": "password reset succeeded",
         "new_password": True,
         "first_step_action": "reset password",
-        "first_step_desc": "We're going to assume that the user has arrived on this screen by satisfying whatever challenges you have in place to reset their password. On the back end, Castle will track the successful password reset event."
+        "first_step_desc": "We're going to assume that the user has arrived on this screen after satisfying whatever challenges you have in place to reset their password. On the back end, Castle will track the successful password reset event."
     },
     "review_suspicious_activity": {
         "api_endpoint": "authenticate",

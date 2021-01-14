@@ -183,6 +183,8 @@
 						this_step_desc += "<p>Thank you for letting us know.</p>"
 						this_step_desc += "<p style = 'color: red'>We have locked your account.</p>"
 						this_step_desc += "<p>Please check your email for a link to reset your password and unlock your account.</p>"
+						this_step_desc += "<hr>"
+						this_step_desc += "<p>Also, if you have configured webhooks in your Castle tenant (and in this demo), then you should see a new $incident.confirmed event at <a href = '{{webhook_url}}' target = '_blank'>your endpoint</a>.</p>"
 					}
 					$("#this_step_desc").html(this_step_desc)
 					$("#results_table").html("")

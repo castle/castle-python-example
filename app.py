@@ -37,7 +37,8 @@ def get_default_params():
         "castle_app_id": os.getenv('castle_app_id'),
         "location": os.getenv('location'),
         "demo_list": demo_list,
-        "username": "lois.lane@mailinator.com" 
+        "username": "lois.lane@mailinator.com" ,
+        "webhook_url": os.getenv("webhook_url")
     }
 
     return default_params
