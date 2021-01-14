@@ -1,8 +1,8 @@
-#Castle demo application: Python#
+# Castle demo application: Python
 
 This project features and end-to-end sequence for many Castle use-cases, including authentication and reviewing a suspicious device. The application is built in Python on Flask/gunicorn.
 
-##How to engage with this application##
+## How to engage with this application
 
 There are three ways to engage with this demo application:
 
@@ -18,9 +18,9 @@ There are three ways to engage with this demo application:
 
 `docker run -d -p 4005:80 -e castle_app_id={{castle_app_id} -e castle_api_secret={{castle_api_secret}} tomgsmith99/castle-demo-python`
 
-##Setting up this application locally##
+## Setting up this application locally
 
-###Set up a Castle tenant###
+### Set up a Castle tenant
 
 You'll need a Castle tenant to run this app against. If you don't already have a Castle tenant, you can get a free trial at:
 
@@ -28,7 +28,7 @@ https://castle.io
 
 Once you have your Castle tenant set up, you'll need your app ID and API secret to run this app.
 
-###Install the app###
+### Install the app
 
 This is a Python app built with Python 3.9.1. It has not been tested with other versions of Python.
 
@@ -64,7 +64,7 @@ Note - the app also support gunicorn:
 
 `gunicorn app:app`
 
-*Docker*
+## Docker
 A Dockerfile is included in this repo as well.
 
 You can build a Docker image and run a Docker container as follows:
