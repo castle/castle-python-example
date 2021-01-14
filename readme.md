@@ -1,40 +1,40 @@
-*Castle demo application: Python*
+#Castle demo application: Python#
 
 This project features and end-to-end sequence for many Castle use-cases, including authentication and reviewing a suspicious device. The application is built in Python on Flask/gunicorn.
 
-*How to engage with this application*
+##How to engage with this application##
 
 There are three ways to engage with this demo application:
 
-* Clone this repo and install locally (more details below)
+1. Visit the public-facing web app: https://castle-demo-python.herokuapp.com
+> This is the fastest way to get a sense of what the demo is all about
+> Does not require a Castle app id or api secret
 
-* Visit the public-facing web app: https://castle-demo-python.herokuapp.com
--- This is the fastest way to get a sense of what the demo is all about
--- Does not require a Castle app id or api secret
+2. Clone this repo and install & run locally (more details below)
 
-* Run a docker container
--- A Dockerfile is included in this repo. Brief instructions for installing locally are below.
--- Or, you can run a container locally immediately from the dockerhub image:
+3. Run a Docker container
+> A Dockerfile is included in this repo. Brief instructions for installing locally are below.
+> Or, you can run a container locally immediately from the dockerhub image:
 
 `docker run -d -p 4005:80 -e castle_app_id={{castle_app_id} -e castle_api_secret={{castle_api_secret}} tomgsmith99/castle-demo-python`
 
-*Setting up this application locally*
+##Setting up this application locally##
 
-**Set up a Castle tenant**
+###Set up a Castle tenant###
 
 You'll need a Castle tenant to run this app against. If you don't already have a Castle tenant, you can get a free trial at:
 
 https://castle.io
 
-You'll need your Castle app ID and API secret to run this app.
+Once you have your Castle tenant set up, you'll need your app ID and API secret to run this app.
 
-**Set up a Castle tenant**
+###Install the app###
 
 This is a Python app built with Python 3.9.1. It has not been tested with other versions of Python.
 
 First, clone the git repo:
 
-`git clone https://github.com/tomgsmith99/castle-demo-python.git`
+`git clone https://github.com/castle/castle-demo-python.git`
 
 Change to the repo's directory:
 
@@ -52,16 +52,22 @@ Install the dependencies:
 
 Copy the `.env_example` file to a file called `.env`
 
+`cp .env_example .env`
+
 Update the `.env` file with your Castle app id and api secret.
 
 Run the app:
 `flask run`
  * Running on http://127.0.0.1:5000/
 
+Note - the app also support gunicorn:
+
+`gunicorn app:app`
+
 *Docker*
 A Dockerfile is included in this repo as well.
 
-You can install and run the Docker image as follows:
+You can build a Docker image and run a Docker container as follows:
 
 `docker build -t castle-demo-python .`
 
