@@ -1,0 +1,95 @@
+{% extends 'demo.html' %}
+
+{% block desc %}
+
+<p>When a user (or bot) tries to authenticate against your /login endpoint, there are generally three possible outcomes.</p>
+
+<ol>
+	<li>valid username + valid password: successful authentication. In this case your application should send a <b>$login.succeeded</b> event to the Castle /authenticate endpoint, and act upon the response: allow, challenge, deny.</li>
+	<li>valid username + invalid password: failed authentication (invalid password). In this case your application should send a <b>$login.failed</b> event (with the username) to the Castle /track endpoint to help Castle understand if this login attempt is part of a broader attack.</li>
+	<li>invalid username: failed authentication (invalid username). In this case your application should send a <b>$login.failed</b> event (with username = null) to the Castle /track endpoint to help Castle understand if this login attempt is part of a broader attack.</li>
+</ol>
+
+<p>You can use the valid username and password indicated at right to try these three scenarios.</p> 
+
+{% endblock %}
+
+{% block ui %}
+	<div id = "login_form">
+		<p>email: <input type = "text" size = 40 id = "email"></p>
+		<p>
+		{% if new_password %}
+		new 
+		{% endif %}
+		password: <input type = "password" size = 40 id = "password"></p>
+
+	<br>
+	<p><button onclick='evaluate_login()'>log in</button></p>
+	</div>
+
+{% endblock %}
+
+{% block javascript %}
+
+	<script type="text/javascript">
+
+		function evaluate_login() {
+
+			var client_id = _castle('getClientId')
+
+			console.log("the castle client id is: " + client_id)
+
+			var user_data = {
+				email: $("#email").val(),
+				client_id: client_id,
+				password: $("#password").val()
+			}
+
+			$.ajax({
+				url: '/evaluate_login',
+				dataType: 'json',
+				type: 'post',
+				contentType: 'application/json',
+				data: JSON.stringify(user_data),
+				processData: false,
+				success: function(data, textStatus, jQxhr ){
+
+					console.dir(data)
+
+					if ("device_token" in data) {
+						localStorage.setItem("device_token", data.device_token)
+					}
+
+					var rows = ""
+
+					rows += get_table_row("api endpoint", "/" + data.api_endpoint)
+					rows += get_table_row("castle event", data.castle_event)
+
+					if (data.api_endpoint == "track") {
+						desc = "Successfully tracked an event: " + data.castle_event
+						rows += get_table_row("payload to castle", data.payload_to_castle, true)
+					}
+					else if (data.api_endpoint == "authenticate") {
+
+						desc = "Retrieved a recommendation from Castle on the next step in the authentication process."
+						rows += get_table_row("verdict from castle", data.action)
+						rows += get_table_row("payload to castle", data.payload_to_castle, true)
+						rows += get_table_row("response from castle", data.result, true)
+					}
+
+					$("#login_form").hide()
+
+					$("#results_table_div").show()
+
+					$("#desc").html(desc)
+
+					$("#results_table").html(rows)
+				},
+				error: function( jqXhr, textStatus, errorThrown ){
+					console.log( errorThrown )
+				}
+			})
+		}
+	</script>
+
+{% endblock %}

@@ -1,0 +1,190 @@
+{% extends 'demo.html' %}
+
+{% block desc %}
+
+<p>Castle enables you to give your users visibility into and control over which devices can be used to log in to their account.</p>
+
+<p>There are two options in this scenario.</p>
+
+<p>If you "review suspicious login", you send a device token from localStorage to Castle, and Castle will respond with the details of the device.</p>
+
+<p>If you "review my devices", you will get a list of all the devices associated with this user, and the user will have the opportunity to approve or remove specific devices.</p>
+
+{% endblock %}
+
+{% block ui %}
+	<div id = "buttons">
+		<p><button onclick='review_suspicious_login()'>review suspicious login</button></p>
+		<p><button onclick='review_my_devices()'>review my devices</button></p>
+	</div>
+
+	<div id = "review_suspicious_login" style="display: none">
+		<p>Was this you trying to log in?</p>
+		<p><button onclick="update_device('approve', localStorage.getItem('device_token')">Yes, this was me</button></p>
+		<p><button onclick="update_device('report', localStorage.getItem('device_token'))">No, it wasn't me</button></p>
+	</div>
+
+	<div id = "review_devices_div">
+		<table border = 1 id = "review_devices_table" style = "display: none">
+		</table>
+		<br>
+	</div>
+
+	<div id = "review_results">
+		<div id = "approved" style = "display: none">Thanks! You're all set! Castle has added this device to the allowlist for this user.</p></div>
+		<div id = "removed" style = "display: none">
+			<p>The user has confirmed a suspicious login, so at this point you should lock their account on the back end and let them know:<p>
+
+			<p>Thank you for letting us know.</p>
+			<p style = "color: red">We have locked your account.</p>
+			<p>Please check your email for a link to reset your password and unlock your account.</p>
+			<hr>
+			<p>Also, if you have configured webhooks in your Castle tenant (and in this demo), then you should see a new $incident.confirmed event at <a href = "{{webhook_url}}" target = "_blank">your endpoint</a>.</p>
+		</div>
+	</div>
+
+{% endblock %}
+
+{% block javascript %}
+
+	<script type="text/javascript">
+
+		function review_my_devices() {
+
+			data = {}
+
+			$.ajax({
+				url: '/review_my_devices',
+				dataType: 'json',
+				type: 'post',
+				contentType: 'application/json',
+				data: JSON.stringify(data),
+				processData: false,
+				success: function(data, textStatus, jQxhr){
+
+					console.dir(data)
+
+					var rows = ""
+
+					rows += get_table_row("api endpoint", "/" + data.api_endpoint)
+					rows += get_table_row("device info", data.devices, true)
+
+					var device_rows = "<tr style = 'text-align: center; font-weight: bold'>"
+					device_rows += "<td>ip</td><td>browser</td><td>os</td></tr>"
+
+					for (device of data.devices.data) {
+						console.log("the ip address is: " + device.context.ip)
+
+						device_rows += "<tr>"
+						device_rows += "<td>" + device.context.ip + "</td>"
+						device_rows += "<td>" + device.context.user_agent.browser + "</td>"
+						device_rows += "<td>" + device.context.user_agent.os + "</td>"
+						device_rows += "<td><button onclick=\"update_device('approve', '" + device.token + "')\">approve</button></td>"
+						device_rows += "<td><button onclick=\"update_device('report', '" + device.token + "')\">remove</button></td>"
+						device_rows += "</tr>"
+					}
+
+					$("#review_devices_table").show()
+					$("#review_devices_table").html(device_rows)
+
+					$("#desc").hide()
+					$("#buttons").hide()
+
+					$("#results_table_div").show()
+					$("#results_table").html(rows)
+				},
+				error: function( jqXhr, textStatus, errorThrown ){
+					console.log( errorThrown )
+				}
+			})
+		}
+
+		function review_suspicious_login() {
+
+			if (localStorage.getItem("device_token") === null) {
+
+				var msg = "<p>Cannot find a device token in local storage. Please <a href = '/login'>complete a successful login</a> to put a device token in local storage.</p>"
+
+				$("#this_step_desc").html(msg)
+
+				return
+			}
+
+			var data = {
+				"device_token": localStorage.getItem('device_token')
+			}
+
+			$.ajax({
+				url: '/get_device_info',
+				dataType: 'json',
+				type: 'post',
+				contentType: 'application/json',
+				data: JSON.stringify(data),
+				processData: false,
+				success: function( data, textStatus, jQxhr ){
+
+					console.dir(data)
+
+					var rows = ""
+
+					rows += get_table_row("api endpoint", "/" + data.api_endpoint)
+					rows += get_table_row("payload to castle", localStorage.getItem('device_token'))
+					rows += get_table_row("device info", data.device_info, true)
+
+					$("#desc").hide()
+					$("#buttons").hide()
+					$("#review_suspicious_login").show()
+
+					$("#results_table_div").show()
+
+					$("#results_table").html(rows)
+				},
+				error: function( jqXhr, textStatus, errorThrown ){
+					console.log( errorThrown )
+				}
+			})
+		}
+
+		function update_device(user_verdict, device_token) {
+
+			var data = {
+				"device_token": localStorage.getItem('device_token'),
+				"user_verdict": user_verdict
+			}
+
+			$.ajax({
+				url: '/update_device',
+				dataType: 'json',
+				type: 'post',
+				contentType: 'application/json',
+				data: JSON.stringify(data),
+				processData: false,
+				success: function(data, textStatus, jQxhr){
+
+					console.dir(data)
+
+					var rows = ""
+
+					rows += get_table_row("api endpoint", "/" + data.api_endpoint)
+					rows += get_table_row("castle event", data.castle_event)
+					rows += get_table_row("payload to castle", data.payload, true)
+
+					$("#review_suspicious_login").hide()
+
+					if (data.castle_event == "$challenge.succeeded") {
+						$("#approved").show()
+					}
+					else {
+						$("#removed").show()
+					}
+					$("#results_table").html(rows)
+				},
+				error: function( jqXhr, textStatus, errorThrown ){
+					console.log( errorThrown )
+				}
+			})
+		}
+
+	</script>
+
+{% endblock %}

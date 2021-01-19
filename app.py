@@ -37,7 +37,9 @@ def get_default_params():
         "castle_app_id": os.getenv('castle_app_id'),
         "location": os.getenv('location'),
         "demo_list": demo_list,
-        "username": "lois.lane@mailinator.com" ,
+        "username": os.getenv("valid_username"),
+        "valid_password": os.getenv("valid_password"),
+        "valid_username": os.getenv("valid_username"),
         "webhook_url": os.getenv("webhook_url")
     }
 
@@ -53,18 +55,18 @@ def home():
 
     params["home"] = True
 
-    return render_template('index.html', **params)
+    return render_template('demo.html', **params)
 
 @app.route('/<demo_name>')
 def demo(demo_name):
 
+    params = get_default_params()
+
     if demo_name not in valid_urls:
 
-        return render_template('index.html', error=True)
+        return render_template('error.html', **params)
 
     ##########################################
-
-    params = get_default_params()
 
     this_demo = demos[demo_name]
 
@@ -74,51 +76,70 @@ def demo(demo_name):
 
         params["demo_name"] = demo_name
 
-    return render_template('index.html', **params)
+        params[demo_name] = True
+
+    template = demo_name + '.html'
+
+    return render_template(template, **params)
 
 @app.route('/evaluate_login', methods=['POST'])
 def evaluate_login():
 
+    global registered_at
+
     print(request.json)
 
-    email = request.json["email"]
-    demo_name = request.json["demo_name"]
-
     client_id = request.json["client_id"]
+    email = request.json["email"]
+    password = request.json["password"]
 
-    user_id = email
+    # check validity of username + password combo
+    if email == os.getenv("valid_username"):
 
-    if demo_name == "login_failed_username_invalid":
+        user_id = os.getenv("valid_user_id")
+
+        if password == os.getenv("valid_password"):
+            castle_event = "$login.succeeded"
+            castle_api_endpoint = "authenticate"
+        else:
+            castle_api_endpoint = "track"
+            castle_event = "$login.failed"
+    else:
+        castle_api_endpoint = "track"
+        castle_event = "$login.failed"
         user_id = None
+        registered_at = None
 
     payload_to_castle = {
-        'event': demos[demo_name]["castle_name"],
+        'event': castle_event,
         'user_id': user_id,
         'user_traits': {
-            'email': email,
-            'registered_at': registered_at
+            'email': email
         },
         'context': {
             'client_id': client_id
         }
     }
 
+    if registered_at:
+        payload_to_castle["user_traits"]["registered_at"] = registered_at
+
     castle = Client.from_request(request)
 
-    if demos[demo_name]["api_endpoint"] == "authenticate":
+    if castle_api_endpoint == "authenticate":
         verdict = castle.authenticate(payload_to_castle)
 
-    elif demos[demo_name]["api_endpoint"] == "track":
-
+    elif castle_api_endpoint == "track":
         verdict = castle.track(payload_to_castle)
 
     print("verdict:")
     print(verdict)
 
     r = {
-        "api_endpoint": demos[demo_name]["api_endpoint"],
+        "api_endpoint": castle_api_endpoint,
         "payload_to_castle": payload_to_castle,
-        "result": verdict
+        "result": verdict,
+        "castle_event": castle_event
     }
 
     if "device_token" in verdict:
@@ -128,6 +149,43 @@ def evaluate_login():
         r["action"] = verdict["action"]
 
     return r, 200, {'ContentType':'application/json'}
+
+@app.route('/evaluate_new_password', methods=['POST'])
+def evaluate_new_password():
+
+    print(request.json)
+
+    client_id = request.json["client_id"]
+    password = request.json["password"]
+
+    # check validity of username + password combo
+    if password == os.getenv("valid_password"):
+        castle_event = "$password_reset.failed"
+    else:
+        castle_event = "$password_reset.succeeded"
+
+    payload_to_castle = {
+        'event': castle_event,
+        'user_id': os.getenv("valid_user_id"),
+        'user_traits': {
+            'email': os.getenv("valid_username"),
+            'registered_at': registered_at
+        },
+        'context': {
+            'client_id': client_id
+        }
+    }
+
+    castle = Client.from_request(request)
+
+    r = {
+        "api_endpoint": "track",
+        "payload_to_castle": payload_to_castle,
+        "castle_event": castle_event
+    }
+
+    return r, 200, {'ContentType':'application/json'}
+
 
 @app.route('/get_device_info', methods=['POST'])
 def get_device_info():
@@ -162,6 +220,40 @@ def get_device_info():
 
     return r, 200, {'ContentType':'application/json'}
 
+def get_authz_string():
+    message = ":" + os.getenv('castle_api_secret')
+
+    message_bytes = message.encode('ascii')
+    base64_bytes = base64.b64encode(message_bytes)
+    return 'Basic ' + base64_bytes.decode('ascii')
+
+@app.route('/review_my_devices', methods=['POST'])
+def review_my_devices():
+
+    print(request.json)
+
+    api_endpoint = "users/" + os.getenv("valid_user_id") + "/devices"
+
+    url = "https://api.castle.io/v1/" + api_endpoint
+
+    payload={}
+
+    headers = {
+      'Content-Type': 'application/json',
+      'Authorization': get_authz_string()
+    }
+
+    response = requests.request("GET", url, headers=headers, data=payload)
+
+    print(response.text)
+
+    r = {
+        "api_endpoint": api_endpoint, 
+        "devices": response.json()
+    }
+
+    return r, 200, {'ContentType':'application/json'}
+
 @app.route('/update_device', methods=['POST'])
 def update_device():
 
@@ -176,17 +268,22 @@ def update_device():
 
     castle = Client.from_request(request)
 
-    result = castle.track(
-        {
-            'event': event,
-            'device_token': request.json["device_token"]
-        }
-    )
+    payload = {
+        'event': event,
+        'device_token': request.json["device_token"],
+        'context': {}
+    }
+
+    payload["context"]["client_id"] = request.json["client_id"]
+
+    result = castle.track(payload)
 
     print(result)
 
     r = {
-        "message": return_msg
+        "api_endpoint": "track",
+        "castle_event": event,
+        "payload": payload
     }
 
     return r, 200, {'ContentType':'application/json'}

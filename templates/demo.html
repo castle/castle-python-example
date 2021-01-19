@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+
+{% block left_col %}
+
+{% if home %}
+
+	<p class="lead">Welcome to Castle demos!</p>
+	<p class="lead">Please choose a demo from the navbar drop-down.</p>
+
+{% else %}
+
+	<p class="lead">workflow: <a href = "/{{demo_name}}">{{friendly_name}}</a></p>
+
+	<div id = "desc">
+	{% block desc %}
+
+	{% endblock %}
+	</div>
+
+	<br>
+
+	<div id = "ui">
+	{% block ui %}
+
+	{% endblock %}
+	</div>
+
+{% endif %}
+
+{% endblock %}
+
+{% block right_col %}
+
+<div id = "metadata">
+	<p>castle app id: {{castle_app_id}}</p>
+	<p>valid username: {{valid_username}}</p>
+	<p>valid password: {{valid_password}}</p>
+
+	{% if wsd %}
+
+	<p class="lead"><a href="{{wsd}}" target="_blank">web sequence diagram for this workflow</a></p>
+
+	{% endif %}
+</div>
+
+{% endblock %}
