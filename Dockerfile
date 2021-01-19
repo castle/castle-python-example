@@ -15,6 +15,10 @@ RUN mv app.py main.py
 ##############################################
 
 ENV location=docker
+ENV valid_password={{valid_password}}
+ENV valid_username=clark.kent@dailyplanet.com
+ENV valid_user_id=00000000
+ENV webhook_url=https://webhook.site
 
 RUN pip install castle
 RUN pip install python-dotenv
