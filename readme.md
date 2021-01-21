@@ -70,3 +70,6 @@ You can build a Docker image and run a Docker container as follows:
 `docker build -t castle-demo-python .`
 
 `docker run -d -p 4005:80 -e castle_app_id={{castle_app_id}} -e castle_api_secret={{castle_api_secret}} -e valid_password={{valid_password}} castle-demo-python`
+
+## Disclaimer
+I’m sharing this sample app with the hope that other developers find it valuable. Although it is not an officially supported sample, we welcome questions and suggestions at `support@castle.io`.
