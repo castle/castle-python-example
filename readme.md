@@ -32,7 +32,7 @@ This is a Python app built with Python 3.9.1. It has not been tested with other 
 
 First, clone the git repo:
 
-`git clone https://github.com/castle/castle-demo-python.git`
+`git clone https://github.com/castle/tomsmith-demo-python`
 
 Change to the repo's directory:
 
@@ -63,6 +63,13 @@ Note - the app also support gunicorn:
 `gunicorn app:app`
 
 ## Docker
+
+### Run from dockerhub
+
+`docker run -d -p 4005:80 -e castle_app_id={{castle_app_id} -e castle_api_secret={{castle_api_secret}} -e valid_password={{valid_password}} tomgsmith99/castle-demo-python`
+
+### Build image locally
+
 A Dockerfile is included in this repo as well.
 
 You can build a Docker image and run a Docker container as follows:
