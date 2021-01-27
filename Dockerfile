@@ -15,6 +15,7 @@ RUN mv app.py main.py
 ##############################################
 
 ENV location=docker
+ENV invalid_password={{invalid_password}}
 ENV valid_password={{valid_password}}
 ENV valid_username=clark.kent@dailyplanet.com
 ENV valid_user_id=00000000

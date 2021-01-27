@@ -38,6 +38,7 @@ def get_default_params():
         "location": os.getenv('location'),
         "demo_list": demo_list,
         "username": os.getenv("valid_username"),
+        "invalid_password": os.getenv("invalid_password"),
         "valid_password": os.getenv("valid_password"),
         "valid_username": os.getenv("valid_username"),
         "webhook_url": os.getenv("webhook_url")

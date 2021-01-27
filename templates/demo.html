@@ -11,6 +11,12 @@
 
 	<p class="lead">workflow: <a href = "/{{demo_name}}">{{friendly_name}}</a></p>
 
+	<div id = "ui">
+	{% block ui %}
+
+	{% endblock %}
+	</div>
+
 	<div id = "desc">
 	{% block desc %}
 
@@ -19,11 +25,7 @@
 
 	<br>
 
-	<div id = "ui">
-	{% block ui %}
 
-	{% endblock %}
-	</div>
 
 {% endif %}
 

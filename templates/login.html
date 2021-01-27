@@ -1,5 +1,35 @@
 {% extends 'demo.html' %}
 
+{% block ui %}
+
+	<div class="row">
+
+		<div class = "col-md-4">
+			<button onclick='populate_form("valid_user")'>valid user + pw</button>
+		</div>
+
+		<div class = "col-md-4">
+			<button onclick='populate_form("invalid_pw")'>valid user, bad pw</button>
+		</div>
+
+		<div class = "col-md-4">
+			<button onclick='populate_form("invalid_username")'>invalid username</button>
+		</div>
+	</div>
+	<br>	
+	<div id = "login_form">
+		<p>email: <input type = "text" size = 40 id = "email"></p>
+		<p>
+		{% if new_password %}
+		new 
+		{% endif %}
+		password: <input type = "password" size = 40 id = "password"></p>
+
+		<p><button onclick='evaluate_login()'>log in</button></p>
+	</div>
+
+{% endblock %}
+
 {% block desc %}
 
 <p>When a user (or bot) tries to authenticate against your /login endpoint, there are generally three possible outcomes.</p>
@@ -11,21 +41,6 @@
 </ol>
 
 <p>You can use the valid username and password indicated at right to try these three scenarios.</p> 
-
-{% endblock %}
-
-{% block ui %}
-	<div id = "login_form">
-		<p>email: <input type = "text" size = 40 id = "email"></p>
-		<p>
-		{% if new_password %}
-		new 
-		{% endif %}
-		password: <input type = "password" size = 40 id = "password"></p>
-
-	<br>
-	<p><button onclick='evaluate_login()'>log in</button></p>
-	</div>
 
 {% endblock %}
 
@@ -89,6 +104,22 @@
 					console.log( errorThrown )
 				}
 			})
+		}
+
+		function populate_form(login_state) {
+
+			if (login_state == "valid_user") {
+				$("#email").val("{{valid_username}}")
+				$("#password").val("{{valid_password}}")
+			}
+			else if (login_state == "invalid_pw") {
+				$("#email").val("{{valid_username}}")
+				$("#password").val("{{invalid_password}}")				
+			}
+			else {
+				$("#email").val("invalid_user@abc.com")
+				$("#password").val("{{invalid_password}}")
+			}
 		}
 	</script>
 
