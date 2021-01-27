@@ -58,6 +58,11 @@ def home():
 
     return render_template('demo.html', **params)
 
+@app.route('/test')
+def test():
+    return render_template('test.html')
+
+
 @app.route('/<demo_name>')
 def demo(demo_name):
 
