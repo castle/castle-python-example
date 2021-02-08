@@ -76,22 +76,53 @@
 		<div id = "main_ui" class = "row">
 			<div id = "left_col" class = "col-sm-6">
 
+
+<textarea id="json-input" autocomplete="off">
+  {
+    "id": 1001,
+    "type": "donut",
+    "name": "Cake",
+    "description": "http://en.wikipedia.org/wiki/Doughnut",
+    "price": 2.55,
+    "available": {
+      "store": 42,
+      "warehouse": 600
+    },
+    "topping": [
+      { "id": 5001, "type": "None" },
+      { "id": 5002, "type": "Glazed" },
+      { "id": 5005, "type": "Sugar" },
+      { "id": 5003, "type": "Chocolate" },
+      { "id": 5004, "type": "Maple" }
+    ]
+  }
+</textarea>
+
+<pre id="json-display"></pre>
+
+<button id="translate">Translate</button>
+
 				{% block left_col %}
 
 				{% endblock %}
-			</div><!-- /left_col -->
-
+			</div>
 			<div id = "right_col" class = "col-md-6">
 				{% block right_col %}
 
 				{% endblock %}
-			</div> <!-- /right_col -->
+			</div>
 
-		</div> <!-- /main_ui -->
+			{% block results_table %}
+			<br>
 
-		{% block results_table %}
+			<div id = "results_table_div" style = "display: none">
+				<table border = 1 id = "results_table">
+				</table>
+			</div>
 
-		{% endblock %}
+			{% endblock %}
+
+		</div>
 
 	</main><!-- /.container -->
 
@@ -103,16 +134,24 @@
 
 <script type="text/javascript">
 
-	function getJson(this_json) {
-
+	// get JSON 
+	function getJson() {
 	  try {
-	    return JSON.parse(this_json);
+	    return JSON.parse($('#json-input').val());
 	  } catch (ex) {
 	    alert('Wrong JSON Format: ' + ex);
 	  }
-
 	}
+
+	// initialize
+	var editor = new JsonEditor('#json-display', getJson());
+
+	// enable translate button
+	$('#translate').on('click', function () {
+	  editor.load(getJson());
+	})
 </script>
+
 </body>
 
 </html>

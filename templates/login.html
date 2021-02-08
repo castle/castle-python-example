@@ -50,6 +50,31 @@
 
 {% endblock %}
 
+{% block results_table %}
+
+<table border = 0 style="table-layout: fixed; vertical-align: top;">
+	<tr>
+		<td style="font-weight: bold">
+			castle api endpoint: <span id="castle_api_endpoint"></span>
+			<br>
+			event: <span id="castle_event"></span>
+		</td>
+		<td id = "verdict_header" style="font-weight: bold; display: none">response from castle</td>
+	</tr>
+
+	<tr>
+		<td style="width: 500px; vertical-align: top;">
+			<div id = "payload_to_castle" style = "word-wrap: break-word"></div>
+		</td>
+		<td style="width: 500px; vertical-align: top;">
+			<div id = "response_from_castle" style = "width: 30%; display: none"></div>
+		</td>
+	</tr>
+
+</table>
+
+{% endblock %}
+
 {% block javascript %}
 
 	<script type="text/javascript">
@@ -81,21 +106,19 @@
 						localStorage.setItem("device_token", data.device_token)
 					}
 
-					var rows = ""
+					var x = new JsonEditor('#payload_to_castle', getJson(JSON.stringify(data.payload_to_castle)))
 
-					rows += get_table_row("api endpoint", "/" + data.api_endpoint)
-					rows += get_table_row("castle event", data.castle_event)
+					$("#castle_api_endpoint").html("/" + data.api_endpoint)
+					$("#castle_event").html(data.castle_event)
 
 					if (data.api_endpoint == "track") {
 						desc = "Successfully tracked an event: " + data.castle_event
-						rows += get_table_row("payload to castle", data.payload_to_castle, true)
 					}
 					else if (data.api_endpoint == "authenticate") {
-
 						desc = "Retrieved a recommendation from Castle on the next step in the authentication process."
-						rows += get_table_row("verdict from castle", data.action)
-						rows += get_table_row("payload to castle", data.payload_to_castle, true)
-						rows += get_table_row("response from castle", data.result, true)
+						var y = new JsonEditor('#response_from_castle', getJson(JSON.stringify(data.result)));
+						$("#verdict_header").show()
+						$("#response_from_castle").show()
 					}
 
 					$("#login_form").hide()
@@ -105,8 +128,6 @@
 					$("#results_table_div").show()
 
 					$("#desc").html(desc)
-
-					$("#results_table").html(rows)
 				},
 				error: function( jqXhr, textStatus, errorThrown ){
 					console.log( errorThrown )
