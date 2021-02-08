@@ -2,7 +2,7 @@
 
 {% block ui %}
 
-	<div class="row">
+	<div class="row" id = "buttons_row">
 
 		<div class = "col-md-4">
 			<button onclick='populate_form("valid_user")'>valid user + pw</button>
@@ -18,13 +18,19 @@
 	</div>
 	<br>	
 	<div id = "login_form">
-		<p>email: <input type = "text" size = 40 id = "email"></p>
-		<p>
-		{% if new_password %}
-		new 
-		{% endif %}
-		password: <input type = "password" size = 40 id = "password"></p>
 
+		<table border = 0>
+			<tr>
+				<td style = "text-align: right; padding-bottom: 10px">email:</td>
+				<td style = "padding-bottom: 10px"><input type = "text" size = 40 id = "email"></td>
+			</tr>
+
+			<tr style = "margin-top: 10px">
+				<td style = "text-align: right">password:</td>
+				<td><input type = "password" size = 40 id = "password"></td>
+			</tr>
+		</table>
+		<br>
 		<p><button onclick='evaluate_login()'>log in</button></p>
 	</div>
 
@@ -93,6 +99,8 @@
 					}
 
 					$("#login_form").hide()
+
+					$("#buttons_row").hide()
 
 					$("#results_table_div").show()
 
