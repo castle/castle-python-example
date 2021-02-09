@@ -1,12 +1,20 @@
 FROM tiangolo/meinheld-gunicorn-flask:python3.7
 
+ENV VERSION=1.0
+ENV TARBALL=v${VERSION}.tar.gz
+ENV RELEASE=tomsmith-demo-python-${VERSION}
+
 WORKDIR /tmp
 
-RUN git clone git://github.com/castle/castle-demo-python
+ADD https://github.com/castle/tomsmith-demo-python/archive/${TARBALL} ${TARBALL}
 
-WORKDIR /tmp/castle-demo-python
+RUN tar -xzf ${TARBALL}
 
-RUN mv * /app
+RUN rm ${TARBALL}
+
+RUN rm -r /app
+
+RUN mv ${RELEASE} /app
 
 WORKDIR /app
 

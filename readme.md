@@ -58,7 +58,7 @@ Run the app:
 `flask run`
  * Running on http://127.0.0.1:5000/
 
-Note - the app also support gunicorn:
+Note - the app also supports gunicorn:
 
 `gunicorn app:app`
 
