@@ -34,7 +34,7 @@ app = Flask(__name__)
 def get_default_params():
 
     default_params = {
-        "castle_app_id": os.getenv('castle_app_id'),
+        "castle_pk": os.getenv('castle_pk'),
         "location": os.getenv('location'),
         "demo_list": demo_list,
         "username": os.getenv("valid_username"),
@@ -90,9 +90,9 @@ def evaluate_login():
 
     print(request.json)
 
-    client_id = request.json["client_id"]
     email = request.json["email"]
     password = request.json["password"]
+    request_token = request.json["request_token"]
 
     # check validity of username + password combo
     if email == os.getenv("valid_username"):
@@ -100,38 +100,40 @@ def evaluate_login():
         user_id = os.getenv("valid_user_id")
 
         if password == os.getenv("valid_password"):
-            castle_event = "$login.succeeded"
-            castle_api_endpoint = "authenticate"
+            castle_type = "$login"
+            castle_status = "$succeeded"
+            castle_api_endpoint = "risk"
         else:
-            castle_api_endpoint = "track"
-            castle_event = "$login.failed"
+            castle_type = "$login"
+            castle_status = "$failed"
+            castle_api_endpoint = "filter"
     else:
-        castle_api_endpoint = "track"
-        castle_event = "$login.failed"
+        castle_api_endpoint = "filter"
+        castle_type = "$login"
+        castle_status = "$failed"
         user_id = None
         registered_at = None
 
     payload_to_castle = {
-        'event': castle_event,
-        'user_id': user_id,
-        'user_traits': {
-            'email': email
+        'type': castle_type,
+        'status': castle_status,
+        'user': {
+          'id': user_id,
+          'email': email
         },
-        'context': {
-            'client_id': client_id
-        }
+        'request_token': request_token
     }
 
     if registered_at:
-        payload_to_castle["user_traits"]["registered_at"] = registered_at
+        payload_to_castle["user"]["registered_at"] = registered_at
 
     castle = Client.from_request(request)
 
-    if castle_api_endpoint == "authenticate":
-        verdict = castle.authenticate(payload_to_castle)
+    if castle_api_endpoint == "risk":
+        verdict = castle.risk(payload_to_castle)
 
-    elif castle_api_endpoint == "track":
-        verdict = castle.track(payload_to_castle)
+    elif castle_api_endpoint == "filter":
+        verdict = castle.filter(payload_to_castle)
 
     print("verdict:")
     print(verdict)
@@ -140,14 +142,12 @@ def evaluate_login():
         "api_endpoint": castle_api_endpoint,
         "payload_to_castle": payload_to_castle,
         "result": verdict,
-        "castle_event": castle_event
+        "castle_type": castle_type,
+        "castle_status": castle_status
     }
 
     if "device_token" in verdict:
         r["device_token"] = verdict["device_token"]
-
-    if "action" in verdict:
-        r["action"] = verdict["action"]
 
     return r, 200, {'ContentType':'application/json'}
 
@@ -156,33 +156,35 @@ def evaluate_new_password():
 
     print(request.json)
 
-    client_id = request.json["client_id"]
     password = request.json["password"]
+    request_token = request.json["request_token"]
 
     # check validity of username + password combo
     if password == os.getenv("valid_password"):
-        castle_event = "$password_reset.failed"
+        castle_type = "$password"
+        castle_status = "$succeeded"
     else:
-        castle_event = "$password_reset.succeeded"
+        castle_type = "$password"
+        castle_status = "$failed"
 
     payload_to_castle = {
-        'event': castle_event,
-        'user_id': os.getenv("valid_user_id"),
-        'user_traits': {
-            'email': os.getenv("valid_username"),
-            'registered_at': registered_at
+        'type': castle_type,
+        'status': castle_status,
+        'user': {
+          'id': os.getenv("valid_user_id"),
+          'email': os.getenv("valid_username"),
+          'registered_at': registered_at
         },
-        'context': {
-            'client_id': client_id
-        }
+        'request_token': request_token
     }
 
     castle = Client.from_request(request)
 
     r = {
-        "api_endpoint": "track",
+        "api_endpoint": "risk",
         "payload_to_castle": payload_to_castle,
-        "castle_event": castle_event
+        'type': castle_type,
+        'status': castle_status,
     }
 
     return r, 200, {'ContentType':'application/json'}
@@ -261,29 +263,30 @@ def update_device():
     print(request.json)
 
     if request.json["user_verdict"] == "report":
-        event = '$review.escalated'
+        castle_type = '$review'
+        castle_status = '$escalated'
         return_msg = "report"
     else:
-        event = '$challenge.succeeded'
+        castle_type = '$challenge'
+        castle_status = '$succeeded'
+
         return_msg = "approve"
 
     castle = Client.from_request(request)
 
     payload = {
-        'event': event,
+        'type': castle_type,
+        'status': castle_status,
         'device_token': request.json["device_token"],
         'context': {}
     }
 
-    payload["context"]["client_id"] = request.json["client_id"]
-
-    result = castle.track(payload)
+    result = castle.risk(payload)
 
     print(result)
 
     r = {
-        "api_endpoint": "track",
-        "castle_event": event,
+        "api_endpoint": "risk",
         "payload": payload
     }
 
