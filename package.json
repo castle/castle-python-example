@@ -1,0 +1,22 @@
+{
+  "name": "castle-python-example",
+  "version": "1.0.0",
+  "description": "This project demonstrates key components of several essential Castle workflows, including login and reviewing a suspicious device. The application is built in Python on Flask/gunicorn.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/castle/castle-python-example.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/castle/castle-python-example/issues"
+  },
+  "homepage": "https://github.com/castle/castle-python-example#readme",
+  "dependencies": {
+    "@castleio/castle-js": "^2.1.7"
+  }
+}
