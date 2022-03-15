@@ -14,7 +14,7 @@ There are three ways to engage with this application:
 3. Run a Docker container
 > A Dockerfile is included in this repo. Brief instructions for installing locally are below. Or, you can run a container locally immediately from the dockerhub image:
 
-`docker run -d -p 4005:80 -e castle_app_id={{castle_app_id} -e castle_api_secret={{castle_api_secret}} -e valid_password={{valid_password}} tomgsmith99/castle-demo-python`
+`docker run -d -p 4005:80 -e castle_pk={{castle_pk} -e castle_api_secret={{castle_api_secret}} -e valid_password={{valid_password}} tomgsmith99/castle-demo-python`
 
 ## Setting up this application locally
 
@@ -54,6 +54,10 @@ Copy the `.env_example` file to a file called `.env`
 
 Update the `.env` file with your Castle app id and api secret.
 
+`npm install`
+
+`cp node_modules/@castleio/castle-js/dist/castle.browser.js ./static/`
+
 Run the app:
 `flask run`
  * Running on http://127.0.0.1:5000/
@@ -66,7 +70,7 @@ Note - the app also supports gunicorn:
 
 ### Run from dockerhub
 
-`docker run -d -p 4005:80 -e castle_app_id={{castle_app_id} -e castle_api_secret={{castle_api_secret}} -e valid_password={{valid_password}} tomgsmith99/castle-demo-python`
+`docker run -d -p 4005:80 -e castle_pk={{castle_pk} -e castle_api_secret={{castle_api_secret}} -e valid_password={{valid_password}} tomgsmith99/castle-demo-python`
 
 ### Build image locally
 
@@ -76,7 +80,7 @@ You can build a Docker image and run a Docker container as follows:
 
 `docker build -t castle-demo-python .`
 
-`docker run -d -p 4005:80 -e castle_app_id={{castle_app_id}} -e castle_api_secret={{castle_api_secret}} -e valid_password={{valid_password}} castle-demo-python`
+`docker run -d -p 4005:80 -e castle_pk={{castle_pk}} -e castle_api_secret={{castle_api_secret}} -e valid_password={{valid_password}} castle-demo-python`
 
 ## Disclaimer
 I’m sharing this sample app with the hope that other developers find it valuable. Although it is not an officially supported sample, we welcome questions and suggestions at `support@castle.io`.

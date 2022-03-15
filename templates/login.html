@@ -31,7 +31,7 @@
 			</tr>
 		</table>
 		<br>
-		<p><button onclick='evaluate_login()'>log in</button></p>
+		<p><button onclick='get_token_and_evaluate_login()'>log in</button></p>
 	</div>
 
 {% endblock %}
@@ -41,9 +41,9 @@
 <p>When a user (or bot) tries to authenticate against your /login endpoint, there are generally three possible outcomes.</p>
 
 <ol>
-	<li>valid username + valid password: successful authentication. In this case your application should send a <b>$login.succeeded</b> event to the Castle /authenticate endpoint, and act upon the response: allow, challenge, deny.</li>
-	<li>valid username + invalid password: failed authentication (invalid password). In this case your application should send a <b>$login.failed</b> event (with the username) to the Castle /track endpoint to help Castle understand if this login attempt is part of a broader attack.</li>
-	<li>invalid username: failed authentication (invalid username). In this case your application should send a <b>$login.failed</b> event (with username = null) to the Castle /track endpoint to help Castle understand if this login attempt is part of a broader attack.</li>
+	<li>valid username + valid password: successful authentication. In this case your application should send a <b>$login.succeeded</b> event to the Castle /risk endpoint, and act upon the response: allow, challenge, deny.</li>
+	<li>valid username + invalid password: failed authentication (invalid password). In this case your application should send a <b>$login.failed</b> event (with the username) to the Castle /filter endpoint to help Castle understand if this login attempt is part of a broader attack.</li>
+	<li>invalid username: failed authentication (invalid username). In this case your application should send a <b>$login.failed</b> event (with username = null) to the Castle /filter endpoint to help Castle understand if this login attempt is part of a broader attack.</li>
 </ol>
 
 <p>You can use the valid username and password indicated at right to try these three scenarios.</p> 
@@ -59,6 +59,8 @@
 			<br>
 			event: <span id="castle_event" style="font-weight: normal;"></span>
 		</td>
+  </tr>
+  <tr colspan="2">
 		<td id = "verdict_header" style="font-weight: bold; display: none">response from castle</td>
 	</tr>
 
@@ -78,16 +80,13 @@
 {% block javascript %}
 
 	<script type="text/javascript">
+		function evaluate_login(requestToken) {
 
-		function evaluate_login() {
-
-			var client_id = _castle('getClientId')
-
-			console.log("the castle client id is: " + client_id)
+			console.log("the castle requestToken is: " + requestToken)
 
 			var user_data = {
 				email: $("#email").val(),
-				client_id: client_id,
+				request_token: requestToken,
 				password: $("#password").val()
 			}
 
@@ -111,10 +110,10 @@
 					$("#castle_api_endpoint").html("/" + data.api_endpoint)
 					$("#castle_event").html(data.castle_event)
 
-					if (data.api_endpoint == "track") {
-						desc = "Successfully tracked an event: " + data.castle_event
+					if (data.api_endpoint == "log") {
+						desc = "Successfully used log on event: " + data.castle_type + '.' + data.castle_status
 					}
-					else if (data.api_endpoint == "authenticate") {
+					else if (data.api_endpoint == "risk" || data.api_endpoint == "filter") {
 						desc = "Retrieved a recommendation from Castle on the next step in the authentication process."
 						var y = new JsonEditor('#response_from_castle', getJson(JSON.stringify(data.result)));
 						$("#verdict_header").show()
@@ -150,6 +149,9 @@
 				$("#password").val("{{invalid_password}}")
 			}
 		}
+		function get_token_and_evaluate_login() {
+      Castle.createRequestToken().then(evaluate_login)
+    }
 	</script>
 
 {% endblock %}
