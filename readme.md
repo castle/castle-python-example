@@ -10,85 +10,87 @@ This project demonstrates key components of several essential Castle workflows. 
 - **privacy** – the Privacy API (`request_user_data`, `delete_user_data`)
 - **events** – the Events API (`events_schema`, `query_events`)
 
-## How to engage with this application
+## Prerequisites
 
-There are three ways to engage with this application:
+You'll need a Castle tenant to run this app against. If you don't already have one, you can start a free trial at https://castle.io.
 
-1. Visit the public-facing web app: https://castle-demo-python.herokuapp.com
-> This is the fastest way to get a sense of what the demo is all about. You do not need a Castle app id or api secret to use the public web app.
+From your Castle dashboard you'll need two values:
 
-2. Clone this repo and install & run locally (more details below)
+- your **publishable key** (`pk`) – used by the browser SDK
+- your **API secret** – used by the backend SDK
 
-3. Run a Docker container
-> A Dockerfile is included in this repo. Brief instructions for installing locally are below. Or, you can run a container locally immediately from the dockerhub image:
+## Running locally
 
-`docker run -d -p 4005:80 -e castle_pk={{castle_pk} -e castle_api_secret={{castle_api_secret}} -e valid_password={{valid_password}} tomgsmith99/castle-demo-python`
+This is a Python app. The castle 7.1 SDK requires **Python 3.9 or newer**; this demo is tested with Python 3.13.
 
-## Setting up this application locally
+Clone the repo and change into it:
 
-### Set up a Castle tenant
+```bash
+git clone https://github.com/castle/castle-python-example.git
+cd castle-python-example
+```
 
-You'll need a Castle tenant to run this app against. If you don't already have a Castle tenant, you can get a free trial at:
+Create and activate a virtual environment:
 
-https://castle.io
+```bash
+python -m venv venv
+. venv/bin/activate
+```
 
-Once you have your Castle tenant set up, you'll need your app ID and API secret to run this app.
+Install the Python dependencies:
 
-### Install the app
+```bash
+pip install -r requirements.txt
+```
 
-This is a Python app. The castle 7.1 SDK requires Python 3.9 or newer; this demo is tested with Python 3.13.
+Fetch the browser SDK asset (served at `/static/castle.browser.js`):
 
-First, clone the git repo:
+```bash
+npm install
+cp node_modules/@castleio/castle-js/dist/castle.browser.js ./static/
+```
 
-`git clone https://github.com/castle/tomsmith-demo-python`
+Create your `.env` from the example and fill in your Castle publishable key (`castle_pk`), API secret (`castle_api_secret`) and a `valid_password`:
 
-Change to the repo's directory:
-
-`cd castle-demo-python`
-
-Create a virtual environment and activate it:
-
-`python -m venv venv`
-
-`. venv/bin/activate`
-
-Install the dependencies:
-
-`pip install -r requirements.txt`
-
-Copy the `.env_example` file to a file called `.env`
-
-`cp .env_example .env`
-
-Update the `.env` file with your Castle app id and api secret.
-
-`npm install`
-
-`cp node_modules/@castleio/castle-js/dist/castle.browser.js ./static/`
+```bash
+cp .env_example .env
+```
 
 Run the app:
-`flask run`
- * Running on http://127.0.0.1:5000/
 
-Note - the app also supports gunicorn:
+```bash
+flask run
+# Running on http://127.0.0.1:5000/
+```
 
-`gunicorn app:app`
+The app also runs under gunicorn:
 
-## Docker
+```bash
+gunicorn app:app
+```
 
-### Run from dockerhub
+## Running with Docker
 
-`docker run -d -p 4005:80 -e castle_pk={{castle_pk} -e castle_api_secret={{castle_api_secret}} -e valid_password={{valid_password}} tomgsmith99/castle-demo-python`
+The bundled `Dockerfile` builds from local source and serves the app with gunicorn on port 80. Because the browser SDK asset is fetched via npm (and is not committed), run the `npm install` + copy step above **before** building the image.
 
-### Build image locally
+Build the image:
 
-A Dockerfile is included in this repo as well.
+```bash
+docker build -t castle-demo-python .
+```
 
-You can build a Docker image and run a Docker container as follows:
+Run a container. The non-secret demo values (`valid_username`, `valid_user_id`, etc.) are baked into the image, so you only need to pass your secrets:
 
-`docker build -t castle-demo-python .`
+```bash
+docker run -d -p 4005:80 \
+  -e castle_pk=YOUR_PUBLISHABLE_KEY \
+  -e castle_api_secret=YOUR_API_SECRET \
+  -e valid_password=YOUR_VALID_PASSWORD \
+  castle-demo-python
+```
 
-`docker run -d -p 4005:80 -e castle_pk={{castle_pk}} -e castle_api_secret={{castle_api_secret}} -e valid_password={{valid_password}} castle-demo-python`
+The app will be available at http://127.0.0.1:4005.
 
 ## Disclaimer
+
 I’m sharing this sample app with the hope that other developers find it valuable. Although it is not an officially supported sample, we welcome questions and suggestions at `support@castle.io`.
