@@ -17,6 +17,6 @@
   },
   "homepage": "https://github.com/castle/castle-python-example#readme",
   "dependencies": {
-    "@castleio/castle-js": "^2.1.7"
+    "@castleio/castle-js": "^2.8.4"
   }
 }
