@@ -1,6 +1,6 @@
 {
   "name": "castle-python-example",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "This project demonstrates key components of several essential Castle workflows, including login and reviewing a suspicious device. The application is built in Python on Flask/gunicorn.",
   "main": "index.js",
   "scripts": {
