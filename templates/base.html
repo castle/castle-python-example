@@ -12,7 +12,7 @@
 	<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 	<link href="/static/styles.css" rel="stylesheet">
 
-	<script src="/static/castle.browser.js"></script>
+	<script src="/vendor/castle-js/castle.browser.js"></script>
 	<script>
 		if (window.Castle && "{{ castle_pk or '' }}") {
 			Castle.configure({ pk: "{{ castle_pk or '' }}" });

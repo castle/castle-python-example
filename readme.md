@@ -43,11 +43,11 @@ Install the Python dependencies:
 pip install -r requirements.txt
 ```
 
-Fetch the browser SDK asset (served at `/static/castle.browser.js`):
+Install the Castle browser SDK from npm. It is served at runtime straight from
+`node_modules` (at `/vendor/castle-js/...`), so there's no file to copy or commit:
 
 ```bash
 npm install
-cp node_modules/@castleio/castle-js/dist/castle.browser.js ./static/
 ```
 
 Create your `.env` from the example and fill in your Castle publishable key (`castle_pk`), API secret (`castle_api_secret`) and a `valid_password`:
@@ -71,7 +71,7 @@ gunicorn app:app
 
 ## Running with Docker
 
-The bundled `Dockerfile` builds from local source and serves the app with gunicorn on port 80. Because the browser SDK asset is fetched via npm (and is not committed), run the `npm install` + copy step above **before** building the image.
+The bundled `Dockerfile` builds from local source and serves the app with gunicorn on port 80. It uses a multi-stage build that runs `npm ci` to fetch the Castle browser SDK, so no pre-build steps are needed.
 
 Build the image:
 

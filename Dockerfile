@@ -1,3 +1,9 @@
+# Fetch the Castle browser SDK from npm (served at runtime from node_modules).
+FROM node:20-slim AS frontend
+WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm ci
+
 FROM python:3.13-slim
 
 WORKDIR /app
@@ -6,6 +12,7 @@ COPY requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
+COPY --from=frontend /app/node_modules ./node_modules
 
 ENV location=docker
 ENV PORT=80

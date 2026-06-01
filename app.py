@@ -3,6 +3,7 @@ from dotenv import load_dotenv
 from flask import Flask
 from flask import render_template
 from flask import request
+from flask import send_from_directory
 
 import os
 
@@ -22,6 +23,18 @@ from demo_config import demos, demo_list, valid_urls
 load_dotenv()
 
 app = Flask(__name__)
+
+# Serve the Castle browser SDK straight from the npm install (node_modules)
+# instead of vendoring it into the repo.
+CASTLE_JS_DIR = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)),
+    'node_modules', '@castleio', 'castle-js', 'dist'
+)
+
+
+@app.route('/vendor/castle-js/<path:filename>')
+def castle_js(filename):
+    return send_from_directory(CASTLE_JS_DIR, filename)
 
 #################################
 # Helpers
