@@ -1,76 +1,40 @@
 {% extends 'demo.html' %}
 
-{% block desc %}
-
-<p>The <b>Lists</b> API (added in castle 7.0) lets you manage allow/block lists in your Castle tenant programmatically.</p>
-
-<p>This demo creates a list and then fetches all lists in your tenant. Creating a list requires a <code>name</code>, a <code>color</code> and a <code>primary_field</code>.</p>
-
-<p>A valid Castle API secret is required for this call to succeed.</p>
-
-{% endblock %}
-
 {% block ui %}
 
-	<div id = "lists_form">
-		<table border = 0>
-			<tr>
-				<td style = "text-align: right; padding-bottom: 10px">name:</td>
-				<td style = "padding-bottom: 10px"><input type = "text" size = 30 id = "name" value = "demo-blocklist"></td>
-			</tr>
-			<tr>
-				<td style = "text-align: right; padding-bottom: 10px">color:</td>
-				<td style = "padding-bottom: 10px"><input type = "text" size = 30 id = "color" value = "$red"></td>
-			</tr>
-			<tr>
-				<td style = "text-align: right">primary field:</td>
-				<td><input type = "text" size = 30 id = "primary_field" value = "user.email"></td>
-			</tr>
-		</table>
-		<br>
-		<p><button onclick='create_list()'>create list</button></p>
+	<div class="field">
+		<label for="name">name</label>
+		<input type="text" id="name" value="demo-blocklist">
+	</div>
+	<div class="field">
+		<label for="color">color</label>
+		<input type="text" id="color" value="$red">
+	</div>
+	<div class="field">
+		<label for="primary_field">primary field</label>
+		<input type="text" id="primary_field" value="user.email">
+	</div>
+	<div class="btn-row">
+		<button class="primary" onclick="createList()">Create list</button>
 	</div>
 
 {% endblock %}
 
-{% block javascript %}
+{% block desc %}
 
-	<script type="text/javascript">
+<p>The <strong>Lists</strong> API (added in castle 7.0) lets you manage allow/block lists programmatically. This demo calls <code>create_list</code> and then <code>get_all_lists</code>.</p>
+<p>A valid Castle API secret is required for this call to succeed.</p>
 
-		function create_list() {
+{% endblock %}
 
-			var data = {
-				name: $("#name").val(),
-				color: $("#color").val(),
-				primary_field: $("#primary_field").val()
-			}
-
-			$.ajax({
-				url: '/create_list',
-				dataType: 'json',
-				type: 'post',
-				contentType: 'application/json',
-				data: JSON.stringify(data),
-				processData: false,
-				success: function(data, textStatus, jQxhr){
-
-					console.dir(data)
-
-					var rows = ""
-
-					rows += get_table_row("api endpoint", "/" + data.api_endpoint)
-					rows += get_table_row("payload to castle", data.payload_to_castle, true)
-					rows += get_table_row("result", data.result, true)
-
-					$("#results_table_div").show()
-					$("#results_table").html(rows)
-				},
-				error: function( jqXhr, textStatus, errorThrown ){
-					console.log( errorThrown )
-				}
-			})
-		}
-
-	</script>
-
+{% block scripts %}
+<script>
+	function createList() {
+		postJSON("/create_list", {
+			name: document.getElementById("name").value,
+			color: document.getElementById("color").value,
+			primary_field: document.getElementById("primary_field").value,
+		}).then(renderCastleResponse);
+	}
+</script>
 {% endblock %}

@@ -1,98 +1,50 @@
 {% extends 'demo.html' %}
 
-{% block desc %}
-
-<p>The <b>Events</b> API (added in castle 7.1) lets you inspect your event schema and query the events Castle has recorded for your tenant.</p>
-
-<p>"fetch schema" calls <code>/events/schema</code>. "query events" calls <code>/events/query</code> with a single filter that you can edit below.</p>
-
-<p>A valid Castle API secret is required for these calls to succeed.</p>
-
-{% endblock %}
-
 {% block ui %}
 
-	<div id = "events_form">
-		<p><button onclick='events_schema()'>fetch schema</button></p>
+	<div class="btn-row" style="margin-top:0;">
+		<button onclick="eventsSchema()">Fetch schema</button>
+	</div>
 
-		<hr>
+	<hr>
 
-		<table border = 0>
-			<tr>
-				<td style = "text-align: right; padding-bottom: 10px">field:</td>
-				<td style = "padding-bottom: 10px"><input type = "text" size = 30 id = "field" value = "name"></td>
-			</tr>
-			<tr>
-				<td style = "text-align: right; padding-bottom: 10px">op:</td>
-				<td style = "padding-bottom: 10px"><input type = "text" size = 30 id = "op" value = "$eq"></td>
-			</tr>
-			<tr>
-				<td style = "text-align: right">value:</td>
-				<td><input type = "text" size = 30 id = "value" value = "$login"></td>
-			</tr>
-		</table>
-		<br>
-		<p><button onclick='query_events()'>query events</button></p>
+	<div class="field">
+		<label for="field">field</label>
+		<input type="text" id="field" value="name">
+	</div>
+	<div class="field">
+		<label for="op">op</label>
+		<input type="text" id="op" value="$eq">
+	</div>
+	<div class="field">
+		<label for="value">value</label>
+		<input type="text" id="value" value="$login">
+	</div>
+	<div class="btn-row">
+		<button class="primary" onclick="queryEvents()">Query events</button>
 	</div>
 
 {% endblock %}
 
-{% block javascript %}
+{% block desc %}
 
-	<script type="text/javascript">
+<p>The <strong>Events</strong> API (added in castle 7.1) lets you inspect your event schema (<code>/events/schema</code>) and query recorded events (<code>/events/query</code>).</p>
+<p>A valid Castle API secret is required for these calls to succeed.</p>
 
-		function render_result(data) {
+{% endblock %}
 
-			console.dir(data)
+{% block scripts %}
+<script>
+	function eventsSchema() {
+		postJSON("/events_schema", {}).then(renderCastleResponse);
+	}
 
-			var rows = ""
-
-			rows += get_table_row("api endpoint", "/" + data.api_endpoint)
-			rows += get_table_row("payload to castle", data.payload_to_castle, true)
-			rows += get_table_row("result", data.result, true)
-
-			$("#results_table_div").show()
-			$("#results_table").html(rows)
-		}
-
-		function events_schema() {
-
-			$.ajax({
-				url: '/events_schema',
-				dataType: 'json',
-				type: 'post',
-				contentType: 'application/json',
-				data: JSON.stringify({}),
-				processData: false,
-				success: render_result,
-				error: function( jqXhr, textStatus, errorThrown ){
-					console.log( errorThrown )
-				}
-			})
-		}
-
-		function query_events() {
-
-			var data = {
-				field: $("#field").val(),
-				op: $("#op").val(),
-				value: $("#value").val()
-			}
-
-			$.ajax({
-				url: '/query_events',
-				dataType: 'json',
-				type: 'post',
-				contentType: 'application/json',
-				data: JSON.stringify(data),
-				processData: false,
-				success: render_result,
-				error: function( jqXhr, textStatus, errorThrown ){
-					console.log( errorThrown )
-				}
-			})
-		}
-
-	</script>
-
+	function queryEvents() {
+		postJSON("/query_events", {
+			field: document.getElementById("field").value,
+			op: document.getElementById("op").value,
+			value: document.getElementById("value").value,
+		}).then(renderCastleResponse);
+	}
+</script>
 {% endblock %}
