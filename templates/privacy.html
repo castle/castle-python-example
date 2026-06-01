@@ -1,0 +1,75 @@
+{% extends 'demo.html' %}
+
+{% block desc %}
+
+<p>The <b>Privacy</b> API (added in castle 7.0) helps you honor GDPR/CCPA requests by letting you request or delete the data Castle holds for a given user.</p>
+
+<p>Provide an <code>identifier</code> (e.g. an email) and an <code>identifier_type</code> (e.g. <code>$email</code>), then either request or delete that user's data.</p>
+
+<p>A valid Castle API secret is required for these calls to succeed.</p>
+
+{% endblock %}
+
+{% block ui %}
+
+	<div id = "privacy_form">
+		<table border = 0>
+			<tr>
+				<td style = "text-align: right; padding-bottom: 10px">identifier:</td>
+				<td style = "padding-bottom: 10px"><input type = "text" size = 40 id = "identifier" value = "{{valid_username}}"></td>
+			</tr>
+			<tr>
+				<td style = "text-align: right">identifier type:</td>
+				<td><input type = "text" size = 40 id = "identifier_type" value = "$email"></td>
+			</tr>
+		</table>
+		<br>
+		<p>
+			<button onclick="privacy_user_data('request')">request user data</button>
+			<button onclick="privacy_user_data('delete')">delete user data</button>
+		</p>
+	</div>
+
+{% endblock %}
+
+{% block javascript %}
+
+	<script type="text/javascript">
+
+		function privacy_user_data(action) {
+
+			var data = {
+				action: action,
+				identifier: $("#identifier").val(),
+				identifier_type: $("#identifier_type").val()
+			}
+
+			$.ajax({
+				url: '/privacy_user_data',
+				dataType: 'json',
+				type: 'post',
+				contentType: 'application/json',
+				data: JSON.stringify(data),
+				processData: false,
+				success: function(data, textStatus, jQxhr){
+
+					console.dir(data)
+
+					var rows = ""
+
+					rows += get_table_row("api endpoint", "/" + data.api_endpoint)
+					rows += get_table_row("payload to castle", data.payload_to_castle, true)
+					rows += get_table_row("result", data.result, true)
+
+					$("#results_table_div").show()
+					$("#results_table").html(rows)
+				},
+				error: function( jqXhr, textStatus, errorThrown ){
+					console.log( errorThrown )
+				}
+			})
+		}
+
+	</script>
+
+{% endblock %}

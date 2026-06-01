@@ -1,6 +1,14 @@
 # Castle demo application: Python
 
-This project demonstrates key components of several essential Castle workflows, including login and reviewing a suspicious device. The application is built in Python on Flask/gunicorn.
+This project demonstrates key components of several essential Castle workflows. It is built in Python on Flask/gunicorn and uses the [castle](https://github.com/castle/castle-python) SDK (7.1).
+
+## What's demonstrated
+
+- **login** – `risk` (successful login) and `filter` (failed login) endpoints
+- **password reset** – the non-blocking `log` endpoint
+- **lists** – the Lists API (`create_list`, `get_all_lists`)
+- **privacy** – the Privacy API (`request_user_data`, `delete_user_data`)
+- **events** – the Events API (`events_schema`, `query_events`)
 
 ## How to engage with this application
 
@@ -28,7 +36,7 @@ Once you have your Castle tenant set up, you'll need your app ID and API secret 
 
 ### Install the app
 
-This is a Python app built with Python 3.9.1. It has not been tested with other versions of Python.
+This is a Python app. The castle 7.1 SDK requires Python 3.9 or newer; this demo is tested with Python 3.13.
 
 First, clone the git repo:
 

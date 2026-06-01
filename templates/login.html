@@ -41,9 +41,9 @@
 <p>When a user (or bot) tries to authenticate against your /login endpoint, there are generally three possible outcomes.</p>
 
 <ol>
-	<li>valid username + valid password: successful authentication. In this case your application should send a <b>$login.succeeded</b> event to the Castle /authenticate endpoint, and act upon the response: allow, challenge, deny.</li>
-	<li>valid username + invalid password: failed authentication (invalid password). In this case your application should send a <b>$login.failed</b> event (with the username) to the Castle /track endpoint to help Castle understand if this login attempt is part of a broader attack.</li>
-	<li>invalid username: failed authentication (invalid username). In this case your application should send a <b>$login.failed</b> event (with username = null) to the Castle /track endpoint to help Castle understand if this login attempt is part of a broader attack.</li>
+	<li>valid username + valid password: successful authentication. In this case your application should send a <b>$login / $succeeded</b> event to the Castle <b>/risk</b> endpoint, and act upon the response: allow, challenge, deny.</li>
+	<li>valid username + invalid password: failed authentication (invalid password). In this case your application should send a <b>$login / $failed</b> event (with the username) to the Castle <b>/filter</b> endpoint to help Castle understand if this login attempt is part of a broader attack.</li>
+	<li>invalid username: failed authentication (invalid username). In this case your application should send a <b>$login / $failed</b> event (with user id = null) to the Castle <b>/filter</b> endpoint to help Castle understand if this login attempt is part of a broader attack.</li>
 </ol>
 
 <p>You can use the valid username and password indicated at right to try these three scenarios.</p> 
@@ -101,14 +101,10 @@
 
 					console.dir(data)
 
-					if ("device_token" in data) {
-						localStorage.setItem("device_token", data.device_token)
-					}
-
 					var x = new JsonEditor('#payload_to_castle', getJson(JSON.stringify(data.payload_to_castle)))
 
 					$("#castle_api_endpoint").html("/" + data.api_endpoint)
-					$("#castle_event").html(data.castle_event)
+					$("#castle_event").html(data.castle_type + " / " + data.castle_status)
 
 					if (data.api_endpoint == "filter") {
 						desc = "Successfully used filter on event: " + data.castle_type + '.' + data.castle_status
