@@ -1,8 +1,14 @@
 {% extends 'base.html' %}
 
+{% block content %}
 
-{% block left_col %}
-
-<p class="lead">Sorry, but we could not load that URL.</p>
+<section class="hero">
+	<span class="tag">404</span>
+	<h1>Page not found</h1>
+	<p class="lead muted">Sorry, we couldn't load that URL.</p>
+	<div class="btn-row" style="justify-content:center;">
+		<a class="feature" href="/" style="display:inline-block;">Back to demos</a>
+	</div>
+</section>
 
 {% endblock %}

@@ -1,46 +1,66 @@
 {% extends 'base.html' %}
 
-{% block left_col %}
+{% block content %}
 
 {% if home %}
 
-	<p class="lead">Welcome to Castle demos!</p>
-	<p class="lead">Please choose a demo from the navbar drop-down.</p>
+	<section class="hero">
+		<span class="tag">castle 7.1 · python</span>
+		<h1>Castle workflows demo</h1>
+		<p class="lead muted">A small Flask app showing how to integrate the Castle Python SDK.</p>
+	</section>
+
+	<div class="feature-grid">
+		{% for demo in demo_list %}
+		<a class="feature" href="/{{ demo['url'] }}">
+			<h3>{{ demo['friendly_name'] }}</h3>
+			<p>{{ demo['blurb'] }}</p>
+		</a>
+		{% endfor %}
+	</div>
 
 {% else %}
 
-	<p class="lead">workflow: <a href = "/{{demo_name}}">{{friendly_name}}</a></p>
+	<div class="grid">
 
-	<div id = "ui">
-	{% block ui %}
+		<div>
+			<div class="card">
+				<div class="eyebrow">workflow</div>
+				<h2>{{ friendly_name }}</h2>
 
-	{% endblock %}
-	</div> <!-- /ui -->
+				<div id="ui">
+					{% block ui %}{% endblock %}
+				</div>
 
-	<div id = "desc">
-	{% block desc %}
+				<div id="desc" class="muted" style="margin-top:1.2rem;">
+					{% block desc %}{% endblock %}
+				</div>
 
-	{% endblock %}
-	</div> <!-- /desc -->
+				{% if wsd %}
+				<hr>
+				<a href="{{ wsd }}" target="_blank" rel="noopener">View the web sequence diagram &rarr;</a>
+				{% endif %}
+			</div>
 
-	<br>
+			<div id="results-card" class="card hidden">
+				<div class="eyebrow">result</div>
+				<div id="results"></div>
+			</div>
+		</div>
+
+		<aside>
+			<div class="card">
+				<div class="eyebrow">session</div>
+				<ul class="meta-list">
+					<li><span class="k">publishable key</span><span class="v">{{ castle_pk or '—' }}</span></li>
+					<li><span class="k">valid username</span><span class="v">{{ valid_username }}</span></li>
+					<li><span class="k">valid password</span><span class="v">{{ valid_password }}</span></li>
+				</ul>
+			</div>
+		</aside>
+
+	</div>
 
 {% endif %}
-
-{% endblock %}
-
-{% block right_col %}
-
-<div id = "metadata">
-	<p>castle app id: {{castle_app_id}}</p>
-	<p>valid username: {{valid_username}}</p>
-	<p>valid password: {{valid_password}}</p>
-
-	{% if wsd %}
-
-	<p class="lead"><a href="{{wsd}}" target="_blank">web sequence diagram for {{friendly_name}} workflow</a></p>
-
-	{% endif %}
-</div> <!-- /metadata -->
 
 {% endblock %}

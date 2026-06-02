@@ -2,154 +2,68 @@
 
 {% block ui %}
 
-	<div class="row" id = "buttons_row">
-
-		<div class = "col-md-4">
-			<button onclick='populate_form("valid_user")'>valid user + pw</button>
-		</div>
-
-		<div class = "col-md-4">
-			<button onclick='populate_form("invalid_pw")'>valid user, bad pw</button>
-		</div>
-
-		<div class = "col-md-4">
-			<button onclick='populate_form("invalid_username")'>invalid username</button>
-		</div>
+	<div class="btn-row" style="margin-top:0;">
+		<button class="ghost" onclick="fillForm('valid')">valid user + pw</button>
+		<button class="ghost" onclick="fillForm('bad_pw')">valid user, bad pw</button>
+		<button class="ghost" onclick="fillForm('bad_user')">invalid username</button>
 	</div>
-	<br>	
-	<div id = "login_form">
 
-		<table border = 0>
-			<tr>
-				<td style = "text-align: right; padding-bottom: 10px">email:</td>
-				<td style = "padding-bottom: 10px"><input type = "text" size = 40 id = "email"></td>
-			</tr>
-
-			<tr style = "margin-top: 10px">
-				<td style = "text-align: right">password:</td>
-				<td><input type = "password" size = 40 id = "password"></td>
-			</tr>
-		</table>
-		<br>
-		<p><button onclick='evaluate_login()'>log in</button></p>
+	<div style="margin-top:1.2rem;">
+		<div class="field">
+			<label for="email">email</label>
+			<input type="text" id="email" autocomplete="off">
+		</div>
+		<div class="field">
+			<label for="password">password</label>
+			<input type="password" id="password">
+		</div>
+		<div class="btn-row">
+			<button class="primary" onclick="login()">Log in</button>
+		</div>
 	</div>
 
 {% endblock %}
 
 {% block desc %}
 
-<p>When a user (or bot) tries to authenticate against your /login endpoint, there are generally three possible outcomes.</p>
-
+<p>A login attempt has three common outcomes, and each maps to a different Castle endpoint:</p>
 <ol>
-	<li>valid username + valid password: successful authentication. In this case your application should send a <b>$login.succeeded</b> event to the Castle /authenticate endpoint, and act upon the response: allow, challenge, deny.</li>
-	<li>valid username + invalid password: failed authentication (invalid password). In this case your application should send a <b>$login.failed</b> event (with the username) to the Castle /track endpoint to help Castle understand if this login attempt is part of a broader attack.</li>
-	<li>invalid username: failed authentication (invalid username). In this case your application should send a <b>$login.failed</b> event (with username = null) to the Castle /track endpoint to help Castle understand if this login attempt is part of a broader attack.</li>
+	<li><strong>valid username + valid password</strong> &rarr; <code>$login / $succeeded</code> sent to <code>/risk</code>; act on the verdict (allow, challenge, deny).</li>
+	<li><strong>valid username + invalid password</strong> &rarr; <code>$login / $failed</code> sent to <code>/filter</code>.</li>
+	<li><strong>invalid username</strong> &rarr; <code>$login / $failed</code> (user id = null) sent to <code>/filter</code>.</li>
 </ol>
 
-<p>You can use the valid username and password indicated at right to try these three scenarios.</p> 
-
 {% endblock %}
 
-{% block results_table %}
+{% block scripts %}
+<script>
+	const VALID_USER = "{{ valid_username }}";
+	const VALID_PW = "{{ valid_password }}";
+	const BAD_PW = "{{ invalid_password }}";
 
-<table border = 0 style="table-layout: fixed; vertical-align: top;">
-	<tr>
-		<td style="font-weight: bold">
-			castle api endpoint: <span id="castle_api_endpoint" style="font-weight: normal;"></span>
-			<br>
-			event: <span id="castle_event" style="font-weight: normal;"></span>
-		</td>
-		<td id = "verdict_header" style="font-weight: bold; display: none">response from castle</td>
-	</tr>
-
-	<tr>
-		<td style="width: 500px; vertical-align: top;">
-			<div id = "payload_to_castle" style = "word-wrap: break-word"></div>
-		</td>
-		<td style="width: 500px; vertical-align: top;">
-			<div id = "response_from_castle" style = "width: 30%; display: none"></div>
-		</td>
-	</tr>
-
-</table>
-
-{% endblock %}
-
-{% block javascript %}
-
-	<script type="text/javascript">
-
-		function evaluate_login() {
-
-			var client_id = _castle('getClientId')
-
-			console.log("the castle client id is: " + client_id)
-
-			var user_data = {
-				email: $("#email").val(),
-				client_id: client_id,
-				password: $("#password").val()
-			}
-
-			$.ajax({
-				url: '/evaluate_login',
-				dataType: 'json',
-				type: 'post',
-				contentType: 'application/json',
-				data: JSON.stringify(user_data),
-				processData: false,
-				success: function(data, textStatus, jQxhr ){
-
-					console.dir(data)
-
-					if ("device_token" in data) {
-						localStorage.setItem("device_token", data.device_token)
-					}
-
-					var x = new JsonEditor('#payload_to_castle', getJson(JSON.stringify(data.payload_to_castle)))
-
-					$("#castle_api_endpoint").html("/" + data.api_endpoint)
-					$("#castle_event").html(data.castle_event)
-
-					if (data.api_endpoint == "track") {
-						desc = "Successfully tracked an event: " + data.castle_event
-					}
-					else if (data.api_endpoint == "authenticate") {
-						desc = "Retrieved a recommendation from Castle on the next step in the authentication process."
-						var y = new JsonEditor('#response_from_castle', getJson(JSON.stringify(data.result)));
-						$("#verdict_header").show()
-						$("#response_from_castle").show()
-					}
-
-					$("#login_form").hide()
-
-					$("#buttons_row").hide()
-
-					$("#results_table_div").show()
-
-					$("#desc").html(desc)
-				},
-				error: function( jqXhr, textStatus, errorThrown ){
-					console.log( errorThrown )
-				}
-			})
+	function fillForm(state) {
+		const email = document.getElementById("email");
+		const password = document.getElementById("password");
+		if (state === "valid") {
+			email.value = VALID_USER;
+			password.value = VALID_PW;
+		} else if (state === "bad_pw") {
+			email.value = VALID_USER;
+			password.value = BAD_PW;
+		} else {
+			email.value = "invalid_user@abc.com";
+			password.value = BAD_PW;
 		}
+	}
 
-		function populate_form(login_state) {
-
-			if (login_state == "valid_user") {
-				$("#email").val("{{valid_username}}")
-				$("#password").val("{{valid_password}}")
-			}
-			else if (login_state == "invalid_pw") {
-				$("#email").val("{{valid_username}}")
-				$("#password").val("{{invalid_password}}")				
-			}
-			else {
-				$("#email").val("invalid_user@abc.com")
-				$("#password").val("{{invalid_password}}")
-			}
-		}
-	</script>
-
+	function login() {
+		withRequestToken(function (requestToken) {
+			postJSON("/evaluate_login", {
+				email: document.getElementById("email").value,
+				password: document.getElementById("password").value,
+				request_token: requestToken,
+			}).then(renderCastleResponse);
+		});
+	}
+</script>
 {% endblock %}

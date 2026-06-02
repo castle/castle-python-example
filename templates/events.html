@@ -1,0 +1,50 @@
+{% extends 'demo.html' %}
+
+{% block ui %}
+
+	<div class="btn-row" style="margin-top:0;">
+		<button onclick="eventsSchema()">Fetch schema</button>
+	</div>
+
+	<hr>
+
+	<div class="field">
+		<label for="field">field</label>
+		<input type="text" id="field" value="name">
+	</div>
+	<div class="field">
+		<label for="op">op</label>
+		<input type="text" id="op" value="$eq">
+	</div>
+	<div class="field">
+		<label for="value">value</label>
+		<input type="text" id="value" value="$login">
+	</div>
+	<div class="btn-row">
+		<button class="primary" onclick="queryEvents()">Query events</button>
+	</div>
+
+{% endblock %}
+
+{% block desc %}
+
+<p>The <strong>Events</strong> API (added in castle 7.1) lets you inspect your event schema (<code>/events/schema</code>) and query recorded events (<code>/events/query</code>).</p>
+<p>A valid Castle API secret is required for these calls to succeed.</p>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+	function eventsSchema() {
+		postJSON("/events_schema", {}).then(renderCastleResponse);
+	}
+
+	function queryEvents() {
+		postJSON("/query_events", {
+			field: document.getElementById("field").value,
+			op: document.getElementById("op").value,
+			value: document.getElementById("value").value,
+		}).then(renderCastleResponse);
+	}
+</script>
+{% endblock %}

@@ -10,10 +10,10 @@ load_dotenv()
 
 configuration.api_secret = os.getenv('castle_api_secret')
 
-# For authenticate method you can set failover strategies: allow(default), deny, challenge, throw
+# For the risk/filter methods you can set failover strategies: allow(default), deny, challenge, throw
 configuration.failover_strategy = 'deny'
 
-# Castle::RequestError is raised when timing out in milliseconds (default: 1000 milliseconds)
+# RequestError is raised when timing out in milliseconds (default: 1000 milliseconds)
 configuration.request_timeout = 1500
 
 # Base Castle API url
