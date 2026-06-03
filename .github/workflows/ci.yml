@@ -6,7 +6,7 @@ on:
   pull_request:
 
 jobs:
-  smoke:
+  test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -15,8 +15,8 @@ jobs:
         with:
           python-version: '3.13'
           cache: pip
-      - run: pip install -r requirements.txt
+      - run: pip install -r requirements-dev.txt
       - name: Byte-compile sources
         run: python -m py_compile app.py castle_config.py demo_config.py
-      - name: Import smoke test
-        run: python -c "import app; print('app imported OK')"
+      - name: Run tests
+        run: pytest
