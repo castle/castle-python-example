@@ -10,6 +10,12 @@ This project demonstrates key components of several essential Castle workflows. 
 - **privacy** – the Privacy API (`request_user_data`, `delete_user_data`)
 - **events** – the Events API (`events_schema`, `query_events`)
 
+## Screenshots
+
+| Home | Login |
+| ---- | ----- |
+| ![Home](docs/screenshots/home.png) | ![Login](docs/screenshots/login.png) |
+
 ## Prerequisites
 
 You'll need a Castle tenant to run this app against. If you don't already have one, you can start a free trial at https://castle.io.
