@@ -69,6 +69,21 @@ The app also runs under gunicorn:
 gunicorn app:app
 ```
 
+## Styling (Tailwind CSS)
+
+The UI is styled with [Tailwind CSS](https://tailwindcss.com). The source lives in
+`src/tailwind.css` (design tokens are configured in `tailwind.config.js`) and is
+compiled to `static/styles.css`, which is committed so the app and the Docker
+image work without a build step.
+
+If you change the templates (`templates/`) or `src/tailwind.css`, regenerate the
+stylesheet (`tailwindcss` is installed by `npm install`):
+
+```bash
+npm run build:css      # one-off, minified build
+npm run watch:css      # rebuild on change during development
+```
+
 ## Running with Docker
 
 The bundled `Dockerfile` builds from local source and serves the app with gunicorn on port 80. It uses a multi-stage build that runs `npm ci` to fetch the Castle browser SDK, so no pre-build steps are needed.

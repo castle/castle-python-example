@@ -24,7 +24,7 @@
 <body>
 
 	<nav class="navbar">
-		<a class="brand" href="/"><span class="dot"></span> Castle <span class="muted" style="font-weight:400">demo</span></a>
+		<a class="brand" href="/"><span class="brand-dot"></span> Castle <span class="text-muted" style="font-weight:400">demo</span></a>
 		<div class="nav-links">
 			{% for demo in demo_list %}
 			<a href="/{{ demo['url'] }}">{{ demo['friendly_name'] }}</a>
@@ -34,7 +34,7 @@
 		</div>
 	</nav>
 
-	<main class="container">
+	<main class="container-page">
 		{% block content %}{% endblock %}
 	</main>
 
