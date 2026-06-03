@@ -4,11 +4,16 @@ This project demonstrates key components of several essential Castle workflows. 
 
 ## What's demonstrated
 
-- **login** – `risk` (successful login) and `filter` (failed login) endpoints
-- **password reset** – the non-blocking `log` endpoint
+The app walks through a full user lifecycle. Every action mints a fresh Castle
+request token in the browser (`Castle.createRequestToken()`) and forwards it to
+the backend.
+
+- **sign up** – `$registration` to `risk` (a new email) or `filter` (an email that already exists)
+- **login** – `$login` to `risk` (successful) or `filter` (failed)
+- **account** – post-login actions: profile update (`$profile_update` to `risk`), a custom event (`Castle.custom()`), and logout (`$logout` via the non-blocking `log` endpoint)
+- **password reset** – `$password_reset` via the non-blocking `log` endpoint
 - **lists** – the Lists API (`create_list`, `get_all_lists`)
 - **privacy** – the Privacy API (`request_user_data`, `delete_user_data`)
-- **events** – the Events API (`events_schema`, `query_events`)
 
 ## Screenshots
 

@@ -19,7 +19,9 @@ def test_every_demo_page_renders(client, demo_name):
 
 def test_demo_list_matches_config():
     # Guards against the demo list and the URL allowlist drifting apart.
-    assert set(valid_urls) == {"login", "password_reset", "lists", "privacy", "events"}
+    assert set(valid_urls) == {
+        "signup", "login", "account", "password_reset", "lists", "privacy"
+    }
 
 
 def test_unknown_demo_renders_error_page(client):

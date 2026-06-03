@@ -51,6 +51,7 @@ def get_default_params():
         "invalid_password": os.getenv("invalid_password"),
         "valid_password": os.getenv("valid_password"),
         "valid_username": os.getenv("valid_username"),
+        "valid_name": os.getenv("valid_name") or "Clark Kent",
         "webhook_url": os.getenv("webhook_url")
     }
 
@@ -103,6 +104,54 @@ def demo(demo_name):
     template = demo_name + '.html'
 
     return render_template(template, **params)
+
+#################################
+# Risk / Filter (registration)
+#################################
+
+@app.route('/evaluate_signup', methods=['POST'])
+def evaluate_signup():
+
+    name = request.json.get("name")
+    email = request.json["email"]
+    request_token = request.json["request_token"]
+
+    castle_type = "$registration"
+
+    # An email that's already taken (the known demo user) is a failed
+    # registration and goes to /filter; a fresh sign-up is risk-assessed.
+    if email == os.getenv("valid_username"):
+        castle_status = "$failed"
+        castle_api_endpoint = "filter"
+    else:
+        castle_status = "$succeeded"
+        castle_api_endpoint = "risk"
+
+    payload_to_castle = {
+        'type': castle_type,
+        'status': castle_status,
+        'user': {
+            'id': os.getenv("valid_user_id"),
+            'email': email,
+            'name': name,
+        },
+        'request_token': request_token,
+    }
+
+    castle = Client.from_request(request)
+
+    if castle_api_endpoint == "risk":
+        verdict = castle.risk(payload_to_castle)
+    else:
+        verdict = castle.filter(payload_to_castle)
+
+    return {
+        "api_endpoint": castle_api_endpoint,
+        "payload_to_castle": payload_to_castle,
+        "result": verdict,
+        "castle_type": castle_type,
+        "castle_status": castle_status,
+    }, 200, {'ContentType': 'application/json'}
 
 #################################
 # Risk / Filter (login)
@@ -174,6 +223,44 @@ def evaluate_login():
     return r, 200, {'ContentType':'application/json'}
 
 #################################
+# Risk (profile update)
+#################################
+
+@app.route('/evaluate_profile_update', methods=['POST'])
+def evaluate_profile_update():
+
+    name = request.json.get("name")
+    email = request.json.get("email") or os.getenv("valid_username")
+    request_token = request.json["request_token"]
+
+    castle_type = "$profile_update"
+    castle_status = "$succeeded"
+
+    payload_to_castle = {
+        'type': castle_type,
+        'status': castle_status,
+        'user': {
+            'id': os.getenv("valid_user_id"),
+            'email': email,
+            'name': name,
+            'registered_at': registered_at,
+        },
+        'request_token': request_token,
+    }
+
+    # A profile change is a sensitive action, so evaluate it with /risk.
+    castle = Client.from_request(request)
+    verdict = castle.risk(payload_to_castle)
+
+    return {
+        "api_endpoint": "risk",
+        "payload_to_castle": payload_to_castle,
+        "result": verdict,
+        "castle_type": castle_type,
+        "castle_status": castle_status,
+    }, 200, {'ContentType': 'application/json'}
+
+#################################
 # Log (password reset)
 #################################
 
@@ -217,6 +304,39 @@ def evaluate_new_password():
     }
 
     return r, 200, {'ContentType':'application/json'}
+
+#################################
+# Log (logout)
+#################################
+
+@app.route('/evaluate_logout', methods=['POST'])
+def evaluate_logout():
+
+    request_token = request.json["request_token"]
+
+    castle_type = "$logout"
+    castle_status = "$succeeded"
+
+    payload_to_castle = {
+        'type': castle_type,
+        'status': castle_status,
+        'user': {
+            'id': os.getenv("valid_user_id"),
+            'email': os.getenv("valid_username"),
+        },
+        'request_token': request_token,
+    }
+
+    # Logout is recorded with the non-blocking log endpoint as well.
+    castle = Client.from_request(request)
+    castle.log(payload_to_castle)
+
+    return {
+        "api_endpoint": "log",
+        "payload_to_castle": payload_to_castle,
+        "castle_type": castle_type,
+        "castle_status": castle_status,
+    }, 200, {'ContentType': 'application/json'}
 
 #################################
 # Lists API
@@ -283,51 +403,3 @@ def privacy_user_data():
         "result": result,
     }, 200, {'ContentType': 'application/json'}
 
-#################################
-# Events API
-#################################
-
-@app.route('/events_schema', methods=['POST'])
-def events_schema():
-
-    castle = castle_client()
-
-    try:
-        result = castle.events_schema()
-    except CastleError as error:
-        result = {"error": str(error)}
-
-    return {
-        "api_endpoint": "events/schema",
-        "payload_to_castle": {},
-        "result": result,
-    }, 200, {'ContentType': 'application/json'}
-
-@app.route('/query_events', methods=['POST'])
-def query_events():
-
-    print(request.json)
-
-    payload = {
-        'filters': [
-            {
-                'field': request.json.get('field') or 'name',
-                'op': request.json.get('op') or '$eq',
-                'value': request.json.get('value') or '$login',
-            }
-        ],
-        'sort': {'field': 'created_at', 'order': 'desc'},
-    }
-
-    castle = castle_client()
-
-    try:
-        result = castle.query_events(payload)
-    except CastleError as error:
-        result = {"error": str(error)}
-
-    return {
-        "api_endpoint": "events/query",
-        "payload_to_castle": payload,
-        "result": result,
-    }, 200, {'ContentType': 'application/json'}
