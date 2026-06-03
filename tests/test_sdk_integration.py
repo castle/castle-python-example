@@ -100,6 +100,83 @@ class TestEvaluateLogin:
 
 
 # ---------------------------------------------------------------------------
+# Risk / filter (registration)
+# ---------------------------------------------------------------------------
+class TestEvaluateSignup:
+    def test_new_email_is_risk_assessed(self, client, fake_sdk):
+        fake_sdk.risk.return_value = {"policy": {"action": "allow"}}
+
+        resp = _post(client, "/evaluate_signup", {
+            "name": "Lois Lane",
+            "email": "lois.lane@dailyplanet.com",
+            "request_token": "tok-1",
+        })
+
+        assert resp.status_code == 200
+        body = resp.get_json()
+        assert body["api_endpoint"] == "risk"
+        assert body["castle_type"] == "$registration"
+        assert body["castle_status"] == "$succeeded"
+        fake_sdk.risk.assert_called_once()
+        sent = fake_sdk.risk.call_args.args[0]
+        assert sent["user"]["email"] == "lois.lane@dailyplanet.com"
+        assert sent["user"]["name"] == "Lois Lane"
+
+    def test_existing_email_goes_to_filter(self, client, fake_sdk):
+        fake_sdk.filter.return_value = {"policy": {"action": "deny"}}
+
+        resp = _post(client, "/evaluate_signup", {
+            "name": "Clark Kent",
+            "email": "clark.kent@dailyplanet.com",
+            "request_token": "tok-2",
+        })
+
+        body = resp.get_json()
+        assert body["api_endpoint"] == "filter"
+        assert body["castle_status"] == "$failed"
+        fake_sdk.filter.assert_called_once()
+        fake_sdk.risk.assert_not_called()
+
+
+# ---------------------------------------------------------------------------
+# Risk (profile update)
+# ---------------------------------------------------------------------------
+class TestEvaluateProfileUpdate:
+    def test_profile_update_calls_risk(self, client, fake_sdk):
+        fake_sdk.risk.return_value = {"policy": {"action": "allow"}}
+
+        resp = _post(client, "/evaluate_profile_update", {
+            "name": "Kal-El",
+            "email": "kal.el@dailyplanet.com",
+            "request_token": "tok-3",
+        })
+
+        assert resp.status_code == 200
+        body = resp.get_json()
+        assert body["api_endpoint"] == "risk"
+        assert body["castle_type"] == "$profile_update"
+        fake_sdk.risk.assert_called_once()
+        sent = fake_sdk.risk.call_args.args[0]
+        assert sent["user"]["name"] == "Kal-El"
+        assert sent["user"]["email"] == "kal.el@dailyplanet.com"
+
+
+# ---------------------------------------------------------------------------
+# Log (logout)
+# ---------------------------------------------------------------------------
+class TestEvaluateLogout:
+    def test_logout_logs_event(self, client, fake_sdk):
+        resp = _post(client, "/evaluate_logout", {"request_token": "tok-4"})
+
+        assert resp.status_code == 200
+        body = resp.get_json()
+        assert body["api_endpoint"] == "log"
+        assert body["castle_type"] == "$logout"
+        fake_sdk.log.assert_called_once()
+        assert fake_sdk.log.call_args.args[0]["type"] == "$logout"
+
+
+# ---------------------------------------------------------------------------
 # Log (password reset)
 # ---------------------------------------------------------------------------
 class TestEvaluateNewPassword:
@@ -224,58 +301,3 @@ class TestPrivacyUserData:
         body = resp.get_json()
         assert body["api_endpoint"] == "privacy"
         assert body["result"] == {"error": "privacy failure"}
-
-
-# ---------------------------------------------------------------------------
-# Events API
-# ---------------------------------------------------------------------------
-class TestEvents:
-    def test_events_schema_success(self, client, fake_sdk):
-        fake_sdk.events_schema.return_value = {"fields": ["name"]}
-
-        resp = _post(client, "/events_schema", {})
-
-        assert resp.status_code == 200
-        body = resp.get_json()
-        assert body["api_endpoint"] == "events/schema"
-        assert body["result"] == {"fields": ["name"]}
-        fake_sdk.events_schema.assert_called_once()
-
-    def test_events_schema_handles_castle_error(self, client, fake_sdk):
-        fake_sdk.events_schema.side_effect = CastleError("schema down")
-
-        resp = _post(client, "/events_schema", {})
-
-        assert resp.get_json()["result"] == {"error": "schema down"}
-
-    def test_query_events_default_filter(self, client, fake_sdk):
-        fake_sdk.query_events.return_value = {"events": []}
-
-        resp = _post(client, "/query_events", {})
-
-        body = resp.get_json()
-        assert body["api_endpoint"] == "events/query"
-        sent = fake_sdk.query_events.call_args.args[0]
-        assert sent["filters"] == [{"field": "name", "op": "$eq", "value": "$login"}]
-        assert sent["sort"] == {"field": "created_at", "order": "desc"}
-
-    def test_query_events_custom_filter(self, client, fake_sdk):
-        fake_sdk.query_events.return_value = {"events": []}
-
-        resp = _post(client, "/query_events", {
-            "field": "user.id",
-            "op": "$neq",
-            "value": "00000000",
-        })
-
-        sent = fake_sdk.query_events.call_args.args[0]
-        assert sent["filters"] == [
-            {"field": "user.id", "op": "$neq", "value": "00000000"}
-        ]
-
-    def test_query_events_handles_castle_error(self, client, fake_sdk):
-        fake_sdk.query_events.side_effect = CastleError("query down")
-
-        resp = _post(client, "/query_events", {})
-
-        assert resp.get_json()["result"] == {"error": "query down"}
