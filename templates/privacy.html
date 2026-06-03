@@ -4,15 +4,15 @@
 
 	<div class="field">
 		<label for="identifier">identifier</label>
-		<input type="text" id="identifier" value="{{ valid_username }}">
+		<input class="input" type="text" id="identifier" value="{{ valid_username }}">
 	</div>
 	<div class="field">
 		<label for="identifier_type">identifier type</label>
-		<input type="text" id="identifier_type" value="$email">
+		<input class="input" type="text" id="identifier_type" value="$email">
 	</div>
 	<div class="btn-row">
-		<button class="primary" onclick="privacy('request')">Request user data</button>
-		<button onclick="privacy('delete')">Delete user data</button>
+		<button class="btn btn-primary" onclick="privacy('request')">Request user data</button>
+		<button class="btn" onclick="privacy('delete')">Delete user data</button>
 	</div>
 
 {% endblock %}

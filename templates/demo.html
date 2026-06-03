@@ -6,11 +6,11 @@
 
 	<section class="hero">
 		<span class="tag">castle 7.1 · python</span>
-		<h1>Castle workflows demo</h1>
-		<p class="lead muted">A small Flask app showing how to integrate the Castle Python SDK.</p>
+		<h1 class="text-[2.2rem] mt-3">Castle workflows demo</h1>
+		<p class="text-[1.15rem] text-muted">A small Flask app showing how to integrate the Castle Python SDK.</p>
 	</section>
 
-	<div class="feature-grid">
+	<div class="grid gap-4 mt-8" style="grid-template-columns:repeat(auto-fit,minmax(210px,1fr));">
 		{% for demo in demo_list %}
 		<a class="feature" href="/{{ demo['url'] }}">
 			<h3>{{ demo['friendly_name'] }}</h3>
@@ -21,28 +21,28 @@
 
 {% else %}
 
-	<div class="grid">
+	<div class="grid gap-6 items-start md:grid-cols-[1.3fr_1fr]">
 
 		<div>
 			<div class="card">
 				<div class="eyebrow">workflow</div>
-				<h2>{{ friendly_name }}</h2>
+				<h2 class="text-[1.15rem]">{{ friendly_name }}</h2>
 
 				<div id="ui">
 					{% block ui %}{% endblock %}
 				</div>
 
-				<div id="desc" class="muted" style="margin-top:1.2rem;">
+				<div id="desc" class="text-muted" style="margin-top:1.2rem;">
 					{% block desc %}{% endblock %}
 				</div>
 
 				{% if wsd %}
-				<hr>
+				<hr class="my-5 border-border">
 				<a href="{{ wsd }}" target="_blank" rel="noopener">View the web sequence diagram &rarr;</a>
 				{% endif %}
 			</div>
 
-			<div id="results-card" class="card hidden">
+			<div id="results-card" class="card hidden mt-6">
 				<div class="eyebrow">result</div>
 				<div id="results"></div>
 			</div>

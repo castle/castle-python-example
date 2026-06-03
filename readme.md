@@ -10,6 +10,12 @@ This project demonstrates key components of several essential Castle workflows. 
 - **privacy** – the Privacy API (`request_user_data`, `delete_user_data`)
 - **events** – the Events API (`events_schema`, `query_events`)
 
+## Screenshots
+
+| Home | Login |
+| ---- | ----- |
+| ![Home](docs/screenshots/home.png) | ![Login](docs/screenshots/login.png) |
+
 ## Prerequisites
 
 You'll need a Castle tenant to run this app against. If you don't already have one, you can start a free trial at https://castle.io.
@@ -67,6 +73,21 @@ The app also runs under gunicorn:
 
 ```bash
 gunicorn app:app
+```
+
+## Styling (Tailwind CSS)
+
+The UI is styled with [Tailwind CSS](https://tailwindcss.com). The source lives in
+`src/tailwind.css` (design tokens are configured in `tailwind.config.js`) and is
+compiled to `static/styles.css`, which is committed so the app and the Docker
+image work without a build step.
+
+If you change the templates (`templates/`) or `src/tailwind.css`, regenerate the
+stylesheet (`tailwindcss` is installed by `npm install`):
+
+```bash
+npm run build:css      # one-off, minified build
+npm run watch:css      # rebuild on change during development
 ```
 
 ## Running with Docker

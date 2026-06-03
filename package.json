@@ -4,6 +4,8 @@
   "description": "This project demonstrates key components of several essential Castle workflows, including login and reviewing a suspicious device. The application is built in Python on Flask/gunicorn.",
   "main": "index.js",
   "scripts": {
+    "build:css": "tailwindcss -i ./src/tailwind.css -o ./static/styles.css --minify",
+    "watch:css": "tailwindcss -i ./src/tailwind.css -o ./static/styles.css --watch",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -18,5 +20,8 @@
   "homepage": "https://github.com/castle/castle-python-example#readme",
   "dependencies": {
     "@castleio/castle-js": "^2.8.4"
+  },
+  "devDependencies": {
+    "tailwindcss": "^3.4.19"
   }
 }
