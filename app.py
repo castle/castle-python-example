@@ -22,6 +22,20 @@ from demo_config import demos, demo_list, valid_urls
 
 load_dotenv()
 
+# Demo fixture defaults. Only castle_pk and castle_api_secret need to be set in
+# .env; the simulated "valid user" the demo logs in falls back to these values.
+DEMO_DEFAULTS = {
+    "location": "localhost",
+    "valid_username": "clark.kent@dailyplanet.com",
+    "valid_name": "Clark Kent",
+    "valid_user_id": "00000000",
+    "valid_password": "1234",
+    "invalid_password": "qwerty",
+    "webhook_url": "https://webhook.site",
+}
+for _key, _value in DEMO_DEFAULTS.items():
+    os.environ.setdefault(_key, _value)
+
 app = Flask(__name__)
 
 # Serve the Castle browser SDK straight from the npm install (node_modules)
