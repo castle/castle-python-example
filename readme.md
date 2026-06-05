@@ -15,6 +15,7 @@ the backend, which calls Castle and acts on the verdict.
 - **password reset** – `$password_reset` via the non-blocking `log` endpoint
 - **lists** – the Lists API (`create_list`, `get_all_lists`)
 - **privacy** – the Privacy API (`request_user_data`, `delete_user_data`)
+- **webhooks** – incoming Castle webhooks are signature-verified with `WebhooksVerify` (against the `X-Castle-Signature` header) and the most recent payloads are listed
 
 ## Screenshots
 

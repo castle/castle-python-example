@@ -1,0 +1,30 @@
+{% extends 'demo.html' %}
+
+{% block ui %}
+<p>This page lists the most recent webhooks Castle has delivered to this app. Each one is signature-verified before it is stored.</p>
+
+<div class="field">
+	<label>receiver endpoint</label>
+	<input class="input" type="text" value="{{ webhook_endpoint }}" readonly onclick="this.select()">
+</div>
+
+<div class="btn-row">
+	<a class="btn" href="/webhooks">Refresh</a>
+</div>
+
+{% if webhooks_received %}
+	{% for wh in webhooks_received %}
+	<div class="result-block mt-4">
+		<div class="label">#{{ wh['id'] }} · {{ wh['received_at'] }}</div>
+		<pre class="whitespace-pre-wrap text-[0.8rem]">{{ wh['body'] | tojson(indent=2) }}</pre>
+	</div>
+	{% endfor %}
+{% else %}
+	<p class="text-muted mt-4">No webhooks received yet.</p>
+{% endif %}
+{% endblock %}
+
+{% block desc %}
+<p>Point a webhook at <code>{{ webhook_endpoint }}</code> from the Castle dashboard (Settings &rarr; Webhooks). Incoming requests are verified with <code>WebhooksVerify</code> against the <code>X-Castle-Signature</code> header; anything that fails verification gets a 404.</p>
+<p>Because this demo runs on localhost, Castle needs a public tunnel (e.g. ngrok) to reach the receiver.</p>
+{% endblock %}

@@ -13,7 +13,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from castle.errors import CastleError
+from castle.errors import CastleError, WebhookVerificationError
 
 import app as app_module
 
@@ -301,3 +301,40 @@ class TestPrivacyUserData:
         body = resp.get_json()
         assert body["api_endpoint"] == "privacy"
         assert body["result"] == {"error": "privacy failure"}
+
+
+# ---------------------------------------------------------------------------
+# Webhooks
+# ---------------------------------------------------------------------------
+class TestWebhooks:
+    def test_verified_webhook_is_stored_and_listed(self, client):
+        with patch.object(app_module, "WebhooksVerify") as mock_verify:
+            mock_verify.call.return_value = None
+
+            resp = client.post(
+                "/webhooks/castle",
+                json={"type": "review.opened", "data": {"id": "rev_1"}},
+                headers={"X-Castle-Signature": "valid"},
+            )
+
+            assert resp.status_code == 204
+            mock_verify.call.assert_called_once()
+
+        listing = client.get("/webhooks")
+        assert listing.status_code == 200
+        assert b"review.opened" in listing.data
+
+    def test_unverified_webhook_is_rejected(self, client):
+        with patch.object(app_module, "WebhooksVerify") as mock_verify:
+            mock_verify.call.side_effect = WebhookVerificationError("bad signature")
+
+            resp = client.post(
+                "/webhooks/castle",
+                json={"type": "review.opened"},
+                headers={"X-Castle-Signature": "bad"},
+            )
+
+            assert resp.status_code == 404
+
+        listing = client.get("/webhooks")
+        assert b"No webhooks received yet." in listing.data

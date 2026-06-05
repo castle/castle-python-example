@@ -10,7 +10,10 @@ import os
 #################################
 
 from castle.client import Client
-from castle.errors import CastleError
+from castle.errors import CastleError, WebhookVerificationError
+from castle.webhooks.verify import WebhooksVerify
+
+from datetime import datetime, timezone
 
 #################################
 
@@ -80,6 +83,11 @@ def castle_client():
 
 # another default value
 registered_at = '2020-02-23T22:28:55.387Z'
+
+# In-memory store of the most recent webhooks received from Castle. A real app
+# would persist these; a list is plenty for a localhost demo.
+received_webhooks = []
+webhook_seq = 0
 
 #################################
 # Page routes
@@ -416,4 +424,46 @@ def privacy_user_data():
         "payload_to_castle": payload,
         "result": result,
     }, 200, {'ContentType': 'application/json'}
+
+#################################
+# Webhooks
+#################################
+
+@app.route('/webhooks')
+def webhooks():
+
+    params = get_default_params()
+
+    params.update(demos["webhooks"])
+    params["demo_name"] = "webhooks"
+    params["webhooks"] = True
+
+    proto = request.headers.get("X-Forwarded-Proto", request.scheme)
+    params["webhook_endpoint"] = f"{proto}://{request.host}/webhooks/castle"
+    params["webhooks_received"] = received_webhooks
+
+    return render_template('webhooks.html', **params)
+
+
+@app.route('/webhooks/castle', methods=['POST'])
+def receive_webhook():
+
+    # Verify the signature against the raw body; anything that fails gets a 404
+    # so we don't reveal the endpoint to unauthenticated callers.
+    try:
+        WebhooksVerify.call(request)
+    except WebhookVerificationError:
+        return render_template('error.html', **get_default_params()), 404
+
+    global webhook_seq
+    webhook_seq += 1
+
+    received_webhooks.insert(0, {
+        "id": webhook_seq,
+        "received_at": datetime.now(timezone.utc).isoformat(),
+        "body": request.get_json(silent=True),
+    })
+    del received_webhooks[50:]
+
+    return '', 204
 

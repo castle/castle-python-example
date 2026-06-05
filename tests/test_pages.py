@@ -20,7 +20,8 @@ def test_every_demo_page_renders(client, demo_name):
 def test_demo_list_matches_config():
     # Guards against the demo list and the URL allowlist drifting apart.
     assert set(valid_urls) == {
-        "signup", "login", "account", "password_reset", "lists", "privacy"
+        "signup", "login", "account", "password_reset", "lists", "privacy",
+        "webhooks"
     }
 
 

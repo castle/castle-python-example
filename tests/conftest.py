@@ -45,5 +45,7 @@ def client(app):
 def reset_module_state():
     """Reset the mutable module-level state the handlers touch."""
     app_module.registered_at = DEFAULT_REGISTERED_AT
+    app_module.received_webhooks.clear()
     yield
     app_module.registered_at = DEFAULT_REGISTERED_AT
+    app_module.received_webhooks.clear()
