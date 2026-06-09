@@ -9,8 +9,8 @@ The app walks through a full user lifecycle. Every action mints a fresh Castle
 request token in the browser (`Castle.createRequestToken()`) and forwards it to
 the backend, which calls Castle and acts on the verdict.
 
-- **sign up** – `$registration` to `risk` (a new email) or `filter` (an email that already exists)
-- **login** – `$login` to `risk` (successful) or `filter` (failed)
+- **sign up** – `$registration` to `filter` (anonymous, so the email goes in `params`): `$attempted` for a new email, `$failed` (resolved via `matching_user_id`) for an email that already exists
+- **login** – `$login` reusing one request token across two calls: `filter` `$attempted` first, then `risk` `$succeeded` on success or `filter` `$failed` (wrong password / unknown user)
 - **account** – post-login actions: profile update (`$profile_update` to `risk`), a custom event (`Castle.custom()`), and logout (`$logout` via the non-blocking `log` endpoint)
 - **password reset** – `$password_reset` via the non-blocking `log` endpoint
 - **lists** – the Lists API (`create_list`, `get_all_lists`)

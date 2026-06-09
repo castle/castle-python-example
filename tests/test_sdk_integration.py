@@ -36,7 +36,8 @@ def fake_sdk():
 # Risk / filter (login)
 # ---------------------------------------------------------------------------
 class TestEvaluateLogin:
-    def test_valid_credentials_call_risk(self, client, fake_sdk):
+    def test_valid_credentials_filter_attempt_then_risk(self, client, fake_sdk):
+        fake_sdk.filter.return_value = {"policy": {"action": "allow"}}
         fake_sdk.risk.return_value = {"policy": {"action": "allow"}}
 
         resp = _post(client, "/evaluate_login", {
@@ -46,14 +47,19 @@ class TestEvaluateLogin:
         })
 
         assert resp.status_code == 200
-        body = resp.get_json()
-        assert body["api_endpoint"] == "risk"
-        assert body["castle_type"] == "$login"
-        assert body["castle_status"] == "$succeeded"
-        assert body["result"] == {"policy": {"action": "allow"}}
+        steps = resp.get_json()["steps"]
+        assert len(steps) == 2
 
+        attempt, outcome = steps
+        assert attempt["api_endpoint"] == "filter"
+        assert attempt["castle_status"] == "$attempted"
+        assert attempt["payload_to_castle"]["params"]["email"] == "clark.kent@dailyplanet.com"
+
+        assert outcome["api_endpoint"] == "risk"
+        assert outcome["castle_status"] == "$succeeded"
+
+        fake_sdk.filter.assert_called_once()
         fake_sdk.risk.assert_called_once()
-        fake_sdk.filter.assert_not_called()
         sent = fake_sdk.risk.call_args.args[0]
         assert sent["type"] == "$login"
         assert sent["status"] == "$succeeded"
@@ -62,7 +68,7 @@ class TestEvaluateLogin:
         assert sent["user"]["registered_at"]
         assert sent["request_token"] == "tok-123"
 
-    def test_valid_user_wrong_password_calls_filter(self, client, fake_sdk):
+    def test_wrong_password_filters_failure_with_matching_user(self, client, fake_sdk):
         fake_sdk.filter.return_value = {"policy": {"action": "deny"}}
 
         resp = _post(client, "/evaluate_login", {
@@ -71,18 +77,17 @@ class TestEvaluateLogin:
             "request_token": "tok-456",
         })
 
-        body = resp.get_json()
-        assert body["api_endpoint"] == "filter"
-        assert body["castle_status"] == "$failed"
+        outcome = resp.get_json()["steps"][1]
+        assert outcome["api_endpoint"] == "filter"
+        assert outcome["castle_status"] == "$failed"
 
-        fake_sdk.filter.assert_called_once()
+        assert fake_sdk.filter.call_count == 2
         fake_sdk.risk.assert_not_called()
-        sent = fake_sdk.filter.call_args.args[0]
-        # A known user keeps their id and registered_at.
-        assert sent["user"]["id"] == "00000000"
-        assert "registered_at" in sent["user"]
+        sent = outcome["payload_to_castle"]
+        assert sent["params"]["email"] == "clark.kent@dailyplanet.com"
+        assert sent["matching_user_id"] == "00000000"
 
-    def test_unknown_user_calls_filter_without_user_id(self, client, fake_sdk):
+    def test_unknown_user_filters_failure_without_matching_user(self, client, fake_sdk):
         fake_sdk.filter.return_value = {"policy": {"action": "deny"}}
 
         resp = _post(client, "/evaluate_login", {
@@ -91,20 +96,20 @@ class TestEvaluateLogin:
             "request_token": "tok-789",
         })
 
-        body = resp.get_json()
-        assert body["api_endpoint"] == "filter"
-        sent = fake_sdk.filter.call_args.args[0]
-        assert sent["user"]["id"] is None
-        # registered_at is dropped for an unknown user.
-        assert "registered_at" not in sent["user"]
+        outcome = resp.get_json()["steps"][1]
+        assert outcome["api_endpoint"] == "filter"
+        assert outcome["castle_status"] == "$failed"
+        sent = outcome["payload_to_castle"]
+        assert sent["params"]["email"] == "stranger@example.com"
+        assert "matching_user_id" not in sent
 
 
 # ---------------------------------------------------------------------------
-# Risk / filter (registration)
+# Filter (registration)
 # ---------------------------------------------------------------------------
 class TestEvaluateSignup:
-    def test_new_email_is_risk_assessed(self, client, fake_sdk):
-        fake_sdk.risk.return_value = {"policy": {"action": "allow"}}
+    def test_new_email_filtered_as_attempted(self, client, fake_sdk):
+        fake_sdk.filter.return_value = {"policy": {"action": "allow"}}
 
         resp = _post(client, "/evaluate_signup", {
             "name": "Lois Lane",
@@ -114,15 +119,17 @@ class TestEvaluateSignup:
 
         assert resp.status_code == 200
         body = resp.get_json()
-        assert body["api_endpoint"] == "risk"
+        assert body["api_endpoint"] == "filter"
         assert body["castle_type"] == "$registration"
-        assert body["castle_status"] == "$succeeded"
-        fake_sdk.risk.assert_called_once()
-        sent = fake_sdk.risk.call_args.args[0]
-        assert sent["user"]["email"] == "lois.lane@dailyplanet.com"
-        assert sent["user"]["name"] == "Lois Lane"
+        assert body["castle_status"] == "$attempted"
+        fake_sdk.filter.assert_called_once()
+        fake_sdk.risk.assert_not_called()
+        sent = fake_sdk.filter.call_args.args[0]
+        assert sent["params"]["email"] == "lois.lane@dailyplanet.com"
+        assert "user" not in sent
+        assert "matching_user_id" not in sent
 
-    def test_existing_email_goes_to_filter(self, client, fake_sdk):
+    def test_existing_email_filtered_as_failed(self, client, fake_sdk):
         fake_sdk.filter.return_value = {"policy": {"action": "deny"}}
 
         resp = _post(client, "/evaluate_signup", {
@@ -136,6 +143,9 @@ class TestEvaluateSignup:
         assert body["castle_status"] == "$failed"
         fake_sdk.filter.assert_called_once()
         fake_sdk.risk.assert_not_called()
+        sent = fake_sdk.filter.call_args.args[0]
+        assert sent["params"]["email"] == "clark.kent@dailyplanet.com"
+        assert sent["matching_user_id"] == "00000000"
 
 
 # ---------------------------------------------------------------------------
