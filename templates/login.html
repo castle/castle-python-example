@@ -30,11 +30,11 @@
 
 {% block desc %}
 
-<p>A login attempt has three common outcomes, and each maps to a different Castle endpoint:</p>
+<p>A login reuses one request token across a two-step sequence:</p>
 <ol class="list-decimal pl-5 space-y-1">
+	<li>the attempt is always filtered first &rarr; <code>$login / $attempted</code> sent to <code>/filter</code> (anonymous, so the email goes in <code>params</code>).</li>
 	<li><strong>valid username + valid password</strong> &rarr; <code>$login / $succeeded</code> sent to <code>/risk</code>; act on the verdict (allow, challenge, deny).</li>
-	<li><strong>valid username + invalid password</strong> &rarr; <code>$login / $failed</code> sent to <code>/filter</code>.</li>
-	<li><strong>invalid username</strong> &rarr; <code>$login / $failed</code> (user id = null) sent to <code>/filter</code>.</li>
+	<li><strong>wrong password / unknown user</strong> &rarr; <code>$login / $failed</code> sent to <code>/filter</code>.</li>
 </ol>
 
 {% endblock %}
@@ -67,8 +67,12 @@
 				password: document.getElementById("password").value,
 				request_token: requestToken,
 			}).then(function (data) {
-				renderCastleResponse(data);
-				const action = data.result && data.result.policy && data.result.policy.action;
+				renderCastleSteps(data.steps);
+				// Act on the outcome (the last step): a /risk allow lets the
+				// user continue to their account.
+				const steps = data.steps || [];
+				const last = steps[steps.length - 1];
+				const action = last && last.result && last.result.policy && last.result.policy.action;
 				if (action === "allow") {
 					const results = document.getElementById("results");
 					const wrap = document.createElement("div");

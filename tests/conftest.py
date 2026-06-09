@@ -25,8 +25,8 @@ for key, value in TEST_ENV.items():
 
 import app as app_module  # noqa: E402  (must follow the env setup above)
 
-# The known-good registration date the app uses as a module-level default. The
-# `evaluate_login` handler mutates this global, so we restore it before each test.
+# The known-good registration date the app uses as a module-level default. It is
+# restored before each test so module state stays deterministic across the suite.
 DEFAULT_REGISTERED_AT = "2020-02-23T22:28:55.387Z"
 
 

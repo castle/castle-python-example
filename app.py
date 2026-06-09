@@ -128,47 +128,44 @@ def demo(demo_name):
     return render_template(template, **params)
 
 #################################
-# Risk / Filter (registration)
+# Filter (registration)
 #################################
 
 @app.route('/evaluate_signup', methods=['POST'])
 def evaluate_signup():
 
-    name = request.json.get("name")
     email = request.json["email"]
     request_token = request.json["request_token"]
 
     castle_type = "$registration"
 
-    # An email that's already taken (the known demo user) is a failed
-    # registration and goes to /filter; a fresh sign-up is risk-assessed.
+    # A registration is evaluated before the account exists, so it is anonymous
+    # activity sent to /filter with the form params (email/phone only). A brand-
+    # new email is an attempt; an email that already belongs to a user is a
+    # failed registration, resolved to that user via matching_user_id.
     if email == os.getenv("valid_username"):
         castle_status = "$failed"
-        castle_api_endpoint = "filter"
+        payload_to_castle = {
+            'type': castle_type,
+            'status': castle_status,
+            'params': {'email': email},
+            'matching_user_id': os.getenv("valid_user_id"),
+            'request_token': request_token,
+        }
     else:
-        castle_status = "$succeeded"
-        castle_api_endpoint = "risk"
-
-    payload_to_castle = {
-        'type': castle_type,
-        'status': castle_status,
-        'user': {
-            'id': os.getenv("valid_user_id"),
-            'email': email,
-            'name': name,
-        },
-        'request_token': request_token,
-    }
+        castle_status = "$attempted"
+        payload_to_castle = {
+            'type': castle_type,
+            'status': castle_status,
+            'params': {'email': email},
+            'request_token': request_token,
+        }
 
     castle = Client.from_request(request)
-
-    if castle_api_endpoint == "risk":
-        verdict = castle.risk(payload_to_castle)
-    else:
-        verdict = castle.filter(payload_to_castle)
+    verdict = castle.filter(payload_to_castle)
 
     return {
-        "api_endpoint": castle_api_endpoint,
+        "api_endpoint": "filter",
         "payload_to_castle": payload_to_castle,
         "result": verdict,
         "castle_type": castle_type,
@@ -176,73 +173,62 @@ def evaluate_signup():
     }, 200, {'ContentType': 'application/json'}
 
 #################################
-# Risk / Filter (login)
+# Filter -> Risk (login)
 #################################
 
 @app.route('/evaluate_login', methods=['POST'])
 def evaluate_login():
 
-    global registered_at
-
-    print(request.json)
-
     email = request.json["email"]
     password = request.json["password"]
     request_token = request.json["request_token"]
 
-    # check validity of username + password combo
-    if email == os.getenv("valid_username"):
+    castle_type = "$login"
 
-        user_id = os.getenv("valid_user_id")
-
-        if password == os.getenv("valid_password"):
-            castle_type = "$login"
-            castle_status = "$succeeded"
-            castle_api_endpoint = "risk"
-        else:
-            castle_type = "$login"
-            castle_status = "$failed"
-            castle_api_endpoint = "filter"
-    else:
-        castle_api_endpoint = "filter"
-        castle_type = "$login"
-        castle_status = "$failed"
-        user_id = None
-        registered_at = None
-
-    payload_to_castle = {
-        'type': castle_type,
-        'status': castle_status,
-        'user': {
-          'id': user_id,
-          'email': email
-        },
-        'request_token': request_token
-    }
-
-    if registered_at:
-        payload_to_castle["user"]["registered_at"] = registered_at
-
+    # A login reuses one request token across two calls: first Filter the attempt
+    # while the visitor is still anonymous, then — on success — assess the
+    # authenticated user with Risk. A failed attempt stays on Filter.
     castle = Client.from_request(request)
 
-    if castle_api_endpoint == "risk":
-        verdict = castle.risk(payload_to_castle)
+    def run_step(api_endpoint, castle_status, fields):
+        payload_to_castle = {
+            'type': castle_type,
+            'status': castle_status,
+            **fields,
+            'request_token': request_token,
+        }
+        if api_endpoint == "risk":
+            verdict = castle.risk(payload_to_castle)
+        else:
+            verdict = castle.filter(payload_to_castle)
+        return {
+            "api_endpoint": api_endpoint,
+            "payload_to_castle": payload_to_castle,
+            "result": verdict,
+            "castle_type": castle_type,
+            "castle_status": castle_status,
+        }
 
-    elif castle_api_endpoint == "filter":
-        verdict = castle.filter(payload_to_castle)
+    # Step 1 — always filter the attempt up front (anonymous -> params).
+    steps = [run_step("filter", "$attempted", {'params': {'email': email}})]
 
-    print("verdict:")
-    print(verdict)
+    # Step 2 — the outcome, on the same request token.
+    if email == os.getenv("valid_username") and password == os.getenv("valid_password"):
+        steps.append(run_step("risk", "$succeeded", {
+            'user': {
+                'id': os.getenv("valid_user_id"),
+                'email': email,
+                'registered_at': registered_at,
+            },
+        }))
+    else:
+        fields = {'params': {'email': email}}
+        # A known email with a wrong password resolves to the existing user.
+        if email == os.getenv("valid_username"):
+            fields['matching_user_id'] = os.getenv("valid_user_id")
+        steps.append(run_step("filter", "$failed", fields))
 
-    r = {
-        "api_endpoint": castle_api_endpoint,
-        "payload_to_castle": payload_to_castle,
-        "result": verdict,
-        "castle_type": castle_type,
-        "castle_status": castle_status
-    }
-
-    return r, 200, {'ContentType':'application/json'}
+    return {"steps": steps}, 200, {'ContentType': 'application/json'}
 
 #################################
 # Risk (profile update)

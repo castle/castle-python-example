@@ -32,10 +32,10 @@
 
 {% block desc %}
 
-<p>A registration is a sensitive action, so it is risk-assessed:</p>
+<p>A registration is evaluated before the account exists, so it is anonymous activity sent to <code>/filter</code> with the form <code>params</code>:</p>
 <ol class="list-decimal pl-5 space-y-1">
-	<li><strong>a new email</strong> &rarr; <code>$registration / $succeeded</code> sent to <code>/risk</code>; act on the verdict (allow, challenge, deny).</li>
-	<li><strong>an email that already exists</strong> &rarr; <code>$registration / $failed</code> sent to <code>/filter</code>.</li>
+	<li><strong>a new email</strong> &rarr; <code>$registration / $attempted</code>; act on the verdict (allow, challenge, deny) before creating the account.</li>
+	<li><strong>an email that already exists</strong> &rarr; <code>$registration / $failed</code> (resolved to the existing user via <code>matching_user_id</code>).</li>
 </ol>
 
 {% endblock %}
