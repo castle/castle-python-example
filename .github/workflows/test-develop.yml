@@ -1,0 +1,36 @@
+name: Test against SDK develop
+
+# Exercises the example app against the unreleased Castle Python SDK (develop
+# branch). This is the permanent test/sdk-develop branch: every push to it runs
+# the suite against the latest develop. Nightly/manual runs require this file to
+# also live on the default branch (GitHub only honours schedule/workflow_dispatch
+# from the default branch).
+on:
+  push:
+    branches: [test/sdk-develop]
+  workflow_dispatch:
+  schedule:
+    - cron: "0 6 * * *"
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Point the app at the SDK develop branch
+        run: ./scripts/set-sdk-version.sh develop
+
+      - run: pip install -r requirements-dev.txt
+
+      - name: Byte-compile sources
+        run: python -m py_compile app.py castle_config.py demo_config.py
+
+      - name: Run tests
+        run: pytest
