@@ -37,7 +37,7 @@ These are the only two values you need to configure.
 
 ## Running locally
 
-The castle 7.x SDK requires **Python 3.9 or newer** (tested with Python 3.9–3.13).
+The castle 7.x SDK requires **Python 3.9 or newer**. This app is tested on Python 3.10–3.13.
 
 ```bash
 git clone https://github.com/castle/castle-python-example.git
