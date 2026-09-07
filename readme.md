@@ -1,7 +1,7 @@
 # Castle demo application: Python
 
 This project demonstrates key Castle workflows in a Python / Flask app built on
-the [castle](https://github.com/castle/castle-python) SDK (7.1).
+the [castle](https://github.com/castle/castle-python) SDK (7.x).
 
 ## What's demonstrated
 
@@ -37,7 +37,7 @@ These are the only two values you need to configure.
 
 ## Running locally
 
-The castle 7.1 SDK requires **Python 3.9 or newer** (tested with Python 3.13).
+The castle 7.x SDK requires **Python 3.9 or newer** (tested with Python 3.9–3.13).
 
 ```bash
 git clone https://github.com/castle/castle-python-example.git
