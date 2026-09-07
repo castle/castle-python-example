@@ -46,4 +46,4 @@ def test_home_loads_castle_umd(client):
 def test_castle_umd_is_served_from_npm(client):
     resp = client.get("/vendor/castle-js/castle.umd.js")
     assert resp.status_code == 200
-    assert resp.mimetype == "application/javascript"
+    assert "javascript" in resp.mimetype

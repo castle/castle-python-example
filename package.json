@@ -6,7 +6,8 @@
   "scripts": {
     "build:css": "tailwindcss -i ./src/tailwind.css -o ./static/styles.css --minify",
     "watch:css": "tailwindcss -i ./src/tailwind.css -o ./static/styles.css --watch",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "postinstall": "node scripts/ensure-castle-umd.js"
   },
   "repository": {
     "type": "git",

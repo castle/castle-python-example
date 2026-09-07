@@ -1,10 +1,9 @@
 from dotenv import load_dotenv
 
 from flask import Flask
-from flask import abort
 from flask import render_template
 from flask import request
-from flask import send_file
+from flask import send_from_directory
 
 import os
 
@@ -50,29 +49,9 @@ CASTLE_JS_DIR = os.path.join(
 )
 
 
-# 2.x ships castle.browser.js; 3.x ships castle.umd.js. The HTML always requests castle.umd.js.
-def resolve_castle_js(filename):
-    aliases = {
-        'castle.umd.js': ('castle.umd.js', 'castle.browser.js'),
-        'castle.browser.js': ('castle.browser.js', 'castle.umd.js'),
-    }
-    names = aliases.get(filename, (filename,))
-    if not os.path.isdir(CASTLE_JS_DIR):
-        return None
-    root = os.path.realpath(CASTLE_JS_DIR)
-    for name in names:
-        candidate = os.path.realpath(os.path.join(root, name))
-        if candidate.startswith(root + os.sep) and os.path.isfile(candidate):
-            return candidate
-    return None
-
-
 @app.route('/vendor/castle-js/<path:filename>')
 def castle_js(filename):
-    path = resolve_castle_js(filename)
-    if path is None:
-        abort(404)
-    return send_file(path, mimetype='application/javascript')
+    return send_from_directory(CASTLE_JS_DIR, filename)
 
 #################################
 # Helpers
