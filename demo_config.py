@@ -19,7 +19,7 @@ demos = {
     },
     "password_reset": {
         "friendly_name": "password reset",
-        "blurb": "Record a password-reset event with the non-blocking log endpoint."
+        "blurb": "Assess a completed password reset ($profile_reset) with Risk."
     },
     "lists": {
         "friendly_name": "lists",

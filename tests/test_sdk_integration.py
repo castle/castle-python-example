@@ -187,10 +187,12 @@ class TestEvaluateLogout:
 
 
 # ---------------------------------------------------------------------------
-# Log (password reset)
+# Risk (password reset)
 # ---------------------------------------------------------------------------
 class TestEvaluateNewPassword:
-    def test_new_password_logs_succeeded(self, client, fake_sdk):
+    def test_new_password_risks_succeeded(self, client, fake_sdk):
+        fake_sdk.risk.return_value = {"policy": {"action": "allow"}}
+
         resp = _post(client, "/evaluate_new_password", {
             "password": "a-brand-new-password",
             "request_token": "tok-1",
@@ -198,16 +200,19 @@ class TestEvaluateNewPassword:
 
         assert resp.status_code == 200
         body = resp.get_json()
-        assert body["api_endpoint"] == "log"
+        assert body["api_endpoint"] == "risk"
         assert body["status"] == "$succeeded"
 
-        fake_sdk.log.assert_called_once()
-        sent = fake_sdk.log.call_args.args[0]
-        assert sent["type"] == "$password_reset"
+        fake_sdk.risk.assert_called_once()
+        sent = fake_sdk.risk.call_args.args[0]
+        assert sent["type"] == "$profile_reset"
         assert sent["status"] == "$succeeded"
         assert sent["user"]["email"] == "clark.kent@dailyplanet.com"
+        assert sent["changeset"] == {"password": {"changed": True}}
 
-    def test_reusing_current_password_logs_failed(self, client, fake_sdk):
+    def test_reusing_current_password_risks_failed(self, client, fake_sdk):
+        fake_sdk.risk.return_value = {"policy": {"action": "allow"}}
+
         resp = _post(client, "/evaluate_new_password", {
             "password": "supersecret",
             "request_token": "tok-2",
@@ -215,8 +220,10 @@ class TestEvaluateNewPassword:
 
         body = resp.get_json()
         assert body["status"] == "$failed"
-        fake_sdk.log.assert_called_once()
-        assert fake_sdk.log.call_args.args[0]["status"] == "$failed"
+        fake_sdk.risk.assert_called_once()
+        sent = fake_sdk.risk.call_args.args[0]
+        assert sent["status"] == "$failed"
+        assert "changeset" not in sent
 
 
 # ---------------------------------------------------------------------------
