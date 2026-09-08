@@ -203,7 +203,7 @@ class TestEvaluateNewPassword:
 
         fake_sdk.log.assert_called_once()
         sent = fake_sdk.log.call_args.args[0]
-        assert sent["type"] == "$password_reset"
+        assert sent["type"] == "$profile_reset"
         assert sent["status"] == "$succeeded"
         assert sent["user"]["email"] == "clark.kent@dailyplanet.com"
 
@@ -216,6 +216,7 @@ class TestEvaluateNewPassword:
         body = resp.get_json()
         assert body["status"] == "$failed"
         fake_sdk.log.assert_called_once()
+        assert fake_sdk.log.call_args.args[0]["type"] == "$profile_reset"
         assert fake_sdk.log.call_args.args[0]["status"] == "$failed"
 
 

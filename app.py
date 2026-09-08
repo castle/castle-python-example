@@ -286,7 +286,7 @@ def evaluate_new_password():
     else:
         castle_status = "$succeeded"
 
-    castle_type = "$password_reset"
+    castle_type = "$profile_reset"
 
     payload_to_castle = {
         'type': castle_type,
@@ -299,7 +299,7 @@ def evaluate_new_password():
         'request_token': request_token
     }
 
-    # $password_reset is a good fit for the non-blocking log endpoint: we want
+    # $profile_reset is a good fit for the non-blocking log endpoint: we want
     # to record the event without waiting on a verdict.
     castle = Client.from_request(request)
     castle.log(payload_to_castle)
