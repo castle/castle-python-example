@@ -6,7 +6,8 @@
   "scripts": {
     "build:css": "tailwindcss -i ./src/tailwind.css -o ./static/styles.css --minify",
     "watch:css": "tailwindcss -i ./src/tailwind.css -o ./static/styles.css --watch",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "postinstall": "node scripts/ensure-castle-umd.js"
   },
   "repository": {
     "type": "git",
@@ -19,7 +20,7 @@
   },
   "homepage": "https://github.com/castle/castle-python-example#readme",
   "dependencies": {
-    "@castleio/castle-js": "^2.8.4"
+    "@castleio/castle-js": "^2.8.5"
   },
   "devDependencies": {
     "tailwindcss": "^3.4.19"

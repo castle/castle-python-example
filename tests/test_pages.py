@@ -35,3 +35,15 @@ def test_unknown_demo_renders_error_page(client):
 def test_unknown_vendor_asset_returns_404(client):
     resp = client.get("/vendor/castle-js/nope.js")
     assert resp.status_code == 404
+
+
+def test_home_loads_castle_umd(client):
+    resp = client.get("/")
+    assert resp.status_code == 200
+    assert b"/vendor/castle-js/castle.umd.js" in resp.data
+
+
+def test_castle_umd_is_served_from_npm(client):
+    resp = client.get("/vendor/castle-js/castle.umd.js")
+    assert resp.status_code == 200
+    assert "javascript" in resp.mimetype
