@@ -269,7 +269,7 @@ def evaluate_profile_update():
     }, 200, {'ContentType': 'application/json'}
 
 #################################
-# Risk (password reset)
+# Log (password reset)
 #################################
 
 @app.route('/evaluate_new_password', methods=['POST'])
@@ -298,19 +298,20 @@ def evaluate_new_password():
         },
         'request_token': request_token
     }
-    if castle_status == "$succeeded":
-        payload_to_castle['changeset'] = {'password': {'changed': True}}
 
+    # $profile_reset is a good fit for the non-blocking log endpoint: we want
+    # to record the event without waiting on a verdict.
     castle = Client.from_request(request)
-    verdict = castle.risk(payload_to_castle)
+    castle.log(payload_to_castle)
 
-    return {
-        "api_endpoint": "risk",
+    r = {
+        "api_endpoint": "log",
         "payload_to_castle": payload_to_castle,
-        "result": verdict,
         'type': castle_type,
         'status': castle_status,
-    }, 200, {'ContentType':'application/json'}
+    }
+
+    return r, 200, {'ContentType':'application/json'}
 
 #################################
 # Log (logout)
